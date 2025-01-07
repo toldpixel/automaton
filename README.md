@@ -1,3 +1,3 @@
 # automaton
 
-Simple scraper project
+Simple scraper project.
