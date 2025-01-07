@@ -38,5 +38,5 @@ jobs:
       - name: Rebuild and restart Docker container
         run: |
           ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 "
-            "cd /home/xorpad/docker/gpu-docker && \
+            cd /home/xorpad/docker/gpu-docker && \
             docker compose up backend -d --build"
