@@ -1,0 +1,41 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master # Change 'main' to 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Backup current application on VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 \
+            "timestamp=$(date +'%Y%m%d_%H%M%S') && \
+            tar -czf /home/xorpad/docker/gpu-docker/backups/backend_backup_$timestamp.tar.gz /home/xorpad/docker/gpu-docker"
+
+      - name: Stop and remove existing Docker container
+        run: |
+          ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 \
+            "cd /home/xorpad/docker/gpu-docker/ && \
+            docker compose down"
+
+      - name: Copy new files to VPS
+        run: |
+          scp -r * xorpad@194.164.53.5:/home/xorpad/docker/gpu-docker/
+
+      - name: Rebuild and restart Docker container
+        run: |
+          ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 "
+            "cd /home/xorpad/docker/gpu-docker && \
+            docker compose up backend -d --build"
