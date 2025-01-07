@@ -21,8 +21,9 @@ jobs:
       - name: Backup current application on VPS
         run: |
           ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 \
-            "timestamp=$(date +'%Y%m%d_%H%M%S') && \
-            tar -czf /home/xorpad/docker/gpu-docker/backups/backend_backup_$timestamp.tar.gz /home/xorpad/docker/gpu-docker"
+            "mkdir -p /home/xorpad/docker/gpu-docker/backups && \
+            timestamp=\$(date +'%Y%m%d_%H%M%S') && \
+            tar -czf /home/xorpad/docker/gpu-docker/backups/backend_backup_\${timestamp}.tar.gz -C /home/xorpad/docker/gpu-docker ."
 
       - name: Stop and remove existing Docker container
         run: |
