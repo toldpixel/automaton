@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - master # Change 'main' to 'master'
+      - master
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 \
             "mkdir -p /home/xorpad/docker/gpu-docker/backups && \
             timestamp=\$(date +'%Y%m%d_%H%M%S') && \
-            tar -czf /home/xorpad/docker/gpu-docker/backups/backend_backup_\${timestamp}.tar.gz -C /home/xorpad/docker/gpu-docker ."
+            tar -czf /home/xorpad/docker/gpu-docker/backups/project_backup_\${timestamp}.tar.gz -C /home/xorpad/docker/gpu-docker ."
 
       - name: Stop and remove existing Docker container
         run: |
@@ -39,4 +39,4 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no xorpad@194.164.53.5 "
             cd /home/xorpad/docker/gpu-docker && \
-            docker compose up backend -d --build"
+            docker compose up scraper -d --build"
