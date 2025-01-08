@@ -15,16 +15,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
+const management_routes_1 = require("./routes/management_routes");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
-const port = 3000;
+const PORT = parseInt(process.env.PORT || "3000", 10);
 const host = "127.0.0.1";
 app.use(body_parser_1.default.json());
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
+app.use(management_routes_1.router);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        app.listen(port, host, function () {
-            console.log(`starting app on port: ${port}`);
+        yield prisma.$connect();
+        console.log("Prisma connected successfully!");
+        app.listen(PORT, host, function () {
+            console.log(`starting app on port: ${PORT}`);
         });
     }
     catch (error) {

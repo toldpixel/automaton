@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getWebsites = void 0;
+exports.deleteWebsite = exports.updateWebsite = exports.getWebsiteById = exports.addWebsite = exports.getWebsites = void 0;
 const managementModel_1 = require("../models/managementModel");
 const store = new managementModel_1.ManagementModel();
 const getWebsites = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -23,104 +23,68 @@ const getWebsites = (_req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getWebsites = getWebsites;
-/*export const createStorage = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const {
-      name,
-      description,
-      address,
-      phone,
-      email,
-      website,
-      units,
-      services,
-      features,
-      hours,
-      ratings,
-    } = req.body;
-
-    if (!name || !address || !phone || !email || !units) {
-      res.status(400).json({
-        error: "Name, address, phone, email, and units are required",
-      });
-      return;
+const addWebsite = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { url, selectors } = req.body;
+        if (!url || !selectors) {
+            res.status(500).json({ error: "Missing url or selector" });
+        }
+        const newWebsite = {
+            url: url,
+            selectors: selectors,
+        };
+        const createdStorage = yield store.create(newWebsite);
+        res.status(201).json(createdStorage);
     }
-
-    const newStorage: Storage = {
-      name,
-      description,
-      address,
-      phone,
-      email,
-      website,
-      units,
-      services,
-      features,
-      hours,
-      ratings,
-    };
-    const createdStorage = await store.create(newStorage);
-    res.status(201).json(createdStorage);
-  } catch (error) {
-    console.error("Error creating storage:", error);
-    res.status(500).json({ error: "Failed to create storage" });
-  }
-};
-
-export const getStorageById = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const storage = await store.show(id);
-    if (!storage) {
-      res.status(404).json({ error: "Storage not found" });
-      return;
+    catch (error) {
+        console.error("Error adding Website:", error);
+        res.status(500).json({ error: "Failed to add Website" });
     }
-    res.status(200).json(storage);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch storage" });
-  }
-};
-
-export const updateStorage = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const updatedStorage = req.body;
-    const storage = await store.update(id, updatedStorage);
-    if (!storage) {
-      res.status(404).json({ error: "Storage not found" });
-      return;
+});
+exports.addWebsite = addWebsite;
+const getWebsiteById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const website = yield store.show(id);
+        if (!website) {
+            res.status(404).json({ error: "Website id not found" });
+        }
+        res.status(200).json(website);
     }
-    res.status(200).json(storage);
-  } catch (error) {
-    console.error("Error updating storage:", error);
-    res.status(500).json({ error: "Failed to update storage" });
-  }
-};
-
-export const deleteStorage = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const deletedStorage = await store.delete(id);
-    if (!deletedStorage) {
-      res.status(404).json({ error: "Storage not found" });
-      return;
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch website " });
     }
-    res.status(200).json({ message: "Storage deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to delete storage" });
-  }
-};*/
+});
+exports.getWebsiteById = getWebsiteById;
+const updateWebsite = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const updatedWebsite = req.body;
+        const website = yield store.update(id, updatedWebsite);
+        if (!website) {
+            res.status(404).json({ error: "Website not found" });
+        }
+        res.status(200).json(website);
+    }
+    catch (error) {
+        console.error("Error updating website:", error);
+        res.status(500).json({ error: "Failed to update website" });
+    }
+});
+exports.updateWebsite = updateWebsite;
+const deleteWebsite = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const deletedWebsite = yield store.delete(id);
+        if (!deletedWebsite) {
+            res.status(404).json({ error: "Website not found" });
+        }
+        res.status(200).json({ message: "Website deleted successfully" });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to delete website" });
+    }
+});
+exports.deleteWebsite = deleteWebsite;

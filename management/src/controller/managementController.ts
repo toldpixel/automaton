@@ -22,6 +22,7 @@ export const addWebsite = async (
     const { url, selectors } = req.body;
     if (!url || !selectors) {
       res.status(500).json({ error: "Missing url or selector" });
+      return;
     }
     const newWebsite: Prisma.WebsiteCreateInput = {
       url: url,
@@ -44,6 +45,7 @@ export const getWebsiteById = async (
     const website = await store.show(id);
     if (!website) {
       res.status(404).json({ error: "Website id not found" });
+      return;
     }
     res.status(200).json(website);
   } catch (error) {

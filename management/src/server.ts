@@ -7,8 +7,8 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const app = express();
-const port = 3000;
-const host = "127.0.0.1";
+const PORT = parseInt(process.env.PORT || "3000", 10);
+const host = "0.0.0.0"; //enable access from outside the container
 
 app.use(bodyParser.json());
 app.use(express.json());
@@ -19,8 +19,8 @@ app.use(router);
   try {
     await prisma.$connect();
     console.log("Prisma connected successfully!");
-    app.listen(port, host, function () {
-      console.log(`starting app on port: ${port}`);
+    app.listen(PORT, host, function () {
+      console.log(`starting app on port: ${PORT}`);
     });
   } catch (error) {
     console.error(error);
