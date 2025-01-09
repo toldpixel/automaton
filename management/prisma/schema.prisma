@@ -16,6 +16,16 @@ datasource db {
 model Website {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   url        String   @db.Text
-  selectors  Json
+  selectors  String   @db.Text
+  Metadata   Metadata?  @relation(fields: [metadataId], references: [id], onDelete: Cascade)
+  metadataId  String?  @unique @db.Uuid
   createdAt  DateTime @default(now())
+}
+
+model Metadata {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  priority   String   @db.Text
+  scheduleFrequency String  @db.Text
+  addedAt    DateTime @db.Timestamp
+  website    Website?
 }

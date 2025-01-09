@@ -1,8 +1,9 @@
 import { Response, Request } from "express";
 import { ManagementModel } from "../models/managementModel";
-import { Prisma, Website } from "@prisma/client";
+import { Prisma, PrismaClient, Website } from "@prisma/client";
 
 const store = new ManagementModel();
+const prisma = new PrismaClient();
 
 export const getWebsites = async (_req: Request, res: Response) => {
   try {
@@ -19,15 +20,32 @@ export const addWebsite = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { url, selectors } = req.body;
-    if (!url || !selectors) {
+    const { url, selectors, metadata } = req.body;
+    if (!url || !selectors || !metadata) {
       res.status(500).json({ error: "Missing url or selector" });
       return;
     }
+
+    // Create our metadata first
+    const createdMetadata = await prisma.metadata.create({
+      data: {
+        priority: metadata.priority,
+        scheduleFrequency: metadata.scheduleFrequency,
+        addedAt: new Date(metadata.addedAt),
+      },
+    });
+
+    // Prisma associate the existing Metadata entry with id
     const newWebsite: Prisma.WebsiteCreateInput = {
       url: url,
       selectors: selectors,
+      Metadata: {
+        connect: {
+          id: createdMetadata.id,
+        },
+      },
     };
+
     const createdStorage = await store.create(newWebsite);
     res.status(201).json(createdStorage);
   } catch (error) {
