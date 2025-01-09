@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import { ManagementModel } from "../models/managementModel";
 import { Prisma, PrismaClient, Website } from "@prisma/client";
+import { postJobToScheduler } from "../api/scheduler_client";
 
 const store = new ManagementModel();
 const prisma = new PrismaClient();
@@ -46,11 +47,31 @@ export const addWebsite = async (
       },
     };
 
-    const createdStorage = await store.create(newWebsite);
-    res.status(201).json(createdStorage);
+    const createdWebsite = await store.create(newWebsite);
+
+    // Fetch full Website object with Metadata
+    const fullWebsite = await prisma.website.findUnique({
+      where: { id: createdWebsite.id },
+      include: {
+        Metadata: true, // Fetch related Metadata
+      },
+    });
+
+    if (!fullWebsite) {
+      throw new Error("Failed to get full Website after object creation!");
+    }
+
+    // Send the job to scheduler, make sure its the correct type - good bye
+    const schedulerResponse = await postJobToScheduler(fullWebsite);
+    if (!schedulerResponse) {
+      console.error("Scheduler error response null!");
+      throw new Error("Scheduler error response null!");
+    }
+
+    res.status(201).json(createdWebsite);
   } catch (error) {
     console.error("Error adding Website:", error);
-    res.status(500).json({ error: "Failed to add Website" });
+    res.status(500).json({ error: `Failed to add Website: ${error}` });
   }
 };
 
