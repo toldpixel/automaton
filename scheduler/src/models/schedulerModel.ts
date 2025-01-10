@@ -13,6 +13,7 @@ function isValidCron(cron: string): boolean {
 // Redis might not be ready on time, depends_on doesnt
 // know if redis is ready - retry
 // check health in docker compose
+//TODO use IORedis from 'ioredis' for retries
 const MAX_RETRIES = 5;
 let retries = 0;
 async function createQueue() {
@@ -82,7 +83,7 @@ async function addRepeatableJob(
         opts: {
           priority: opts.priorityLevel,
           attempts: 3,
-          removeOnComplete: true, // remove the job when complete
+          removeOnComplete: false, //!dont remove jobs from the queue once completed DEBUG
         },
       }
     );
@@ -128,8 +129,8 @@ export class SchedulerModel {
     // options for non-repeatable queue
     const opts: any = {
       attempts: 3,
-      removeOnComplete: false,
-      removeOnFail: false,
+      removeOnComplete: false, //!dont remove jobs from the queue once completed DEBUG
+      removeOnFail: false, //!
     };
 
     //if priority is defined then use it

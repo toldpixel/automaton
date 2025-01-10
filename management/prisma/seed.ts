@@ -5,34 +5,35 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding data...");
 
-  const metadata1 = await prisma.metadata.create({
+  //! Comment out seed when needed
+  /*const metadata1 = await prisma.metadata.create({
     data: {
-      priority: "high",
-      scheduleFrequency: "daily",
+      priority: "",
+      scheduleFrequency: "",
       addedAt: new Date().toISOString(),
     },
   });
 
   const metadata2 = await prisma.metadata.create({
     data: {
-      priority: "medium",
-      scheduleFrequency: "weekly",
+      priority: "",
+      scheduleFrequency: "",
       addedAt: new Date().toISOString(),
     },
   });
 
   const metadata3 = await prisma.metadata.create({
     data: {
-      priority: "low",
-      scheduleFrequency: "monthly",
+      priority: "",
+      scheduleFrequency: "",
       addedAt: new Date().toISOString(),
     },
   });
 
   const metadata4 = await prisma.metadata.create({
     data: {
-      priority: "critical",
-      scheduleFrequency: "hourly",
+      priority: "",
+      scheduleFrequency: "",
       addedAt: new Date().toISOString(),
     },
   });
@@ -69,7 +70,7 @@ async function main() {
     },
   });
 
-  console.log({ website1, website2, website3, website4 });
+  console.log({ website1, website2, website3, website4 });*/
 }
 
 main()

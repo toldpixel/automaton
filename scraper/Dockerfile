@@ -1,10 +1,23 @@
+# Use an official Node.js runtime as a parent image
 FROM node:20.9.0
 
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-COPY package.json package-lock.json ./
+# Copy the package.json and package-lock.json files
+COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
+# Copy the rest of the application code
 COPY . .
 
-CMD ["node", "scraper.js"]
+# Build the application (if needed)
+RUN npm run build
+
+# Expose the port the app runs on
+EXPOSE 6666
+
+# Command to run the app
+CMD ["node", "run", "start"]

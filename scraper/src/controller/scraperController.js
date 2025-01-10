@@ -1,21 +1,31 @@
 import { chromium } from "playwright";
+import { workerHandler } from "../jobs/job-handler.js";
 
 // general control of the scraper init, start, open page, close page, set url
 export class ScrapeController {
   constructor() {
-    this.browser = null;
+    this.browser = null; // playwright browser
     this.scraper = null;
+    this.worker = null; // bullmq worker
     this.pageCount = 0;
     this.pages = [];
   }
 
   //initialize puppeteer and the scraper
   async initialize() {
+    this.worker = workerHandler;
     this.browser = await chromium.launch({
       headless: true,
     });
     this.scraper = new Scraper(this.browser);
   }
+
+  //TODO configure worker here
+  /*async workerConfig() {
+    this.worker.on("failed", (job, err) => {
+      console.error(`Job ${job.id} failed with error:`, err.message);
+    });
+  }*/
 
   //tracks the open pages
   async openNewPage() {
@@ -62,7 +72,8 @@ export class ScrapeController {
       }
 
       const selectors = {};
-      const url = "https://www.vultr.com/pricing/#cloud-gpu";
+      //!const url = "https://www.vultr.com/pricing/#cloud-gpu";
+      const url = "";
       await this.scrapeURL(url, selectors);
     } catch (error) {
       console.error(error);
