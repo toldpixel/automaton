@@ -83,7 +83,8 @@ async function addRepeatableJob(
         opts: {
           priority: opts.priorityLevel,
           attempts: 3,
-          removeOnComplete: false, //!dont remove jobs from the queue once completed DEBUG
+          removeOnComplete: true, //!set to remove jobs from the queue once completed DEBUG
+          removeOnFail: false, //!
         },
       }
     );
@@ -129,7 +130,7 @@ export class SchedulerModel {
     // options for non-repeatable queue
     const opts: any = {
       attempts: 3,
-      removeOnComplete: false, //!dont remove jobs from the queue once completed DEBUG
+      removeOnComplete: true, //! remove jobs from the queue once completed DEBUG
       removeOnFail: false, //!
     };
 
