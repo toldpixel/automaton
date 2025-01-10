@@ -5,6 +5,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { router } from "./routes/scraper_routes.js";
 import { ScrapeController } from "./controller/scraperController.js";
+import { dbConnect } from "./config/db.js";
 
 dotenv.config();
 
@@ -22,6 +23,9 @@ app.use(router);
   try {
     // Launch scraper
     await scrapeController.initialize();
+
+    // Launch database connection
+    await dbConnect();
 
     // Start server and listen
     app.listen(PORT, host, function () {

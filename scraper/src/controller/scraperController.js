@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import { Worker, Job } from "bullmq";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import { saveResultToDB } from "../api-clients/storage.js";
 
 dotenv.config();
 
@@ -124,7 +125,9 @@ export class ScrapeController {
             job.data.url,
             job.data.selectors
           );
-          return scrapeResult;
+
+          const savedResult = saveResultToDB(scrapeResult, job.data);
+          return savedResult;
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
           throw error;
@@ -294,9 +297,13 @@ export class Scraper {
       // wait till the specific selector appears - deprecated (docs) still works :)
       await this.page.waitForSelector(selectors);
 
-      const extractedText = await this.page.locator(selectors).textContent();
-
-      return cleanWhitespace(extractedText);
+      const extractedHTML = await this.page.locator(selectors).innerHTML();
+      const compressedHtml = extractedHTML
+        .replace(/\s{2,}/g, " ")
+        .replace(/\n/g, "")
+        .trim();
+      //cleanWhitespace(extractedText); //! only use for text scrapes textContent()
+      return compressedHtml;
     } catch (error) {
       console.error(error);
       throw Error(error);
@@ -316,22 +323,41 @@ function cleanWhitespace(data) {
 // Helper assistant (ChatGPT) adjusted
 async function polling(attempt, maxRetries, pollingInterval, runStatus, run) {
   console.log(run);
+  const result = [];
   while (attempt < maxRetries) {
     console.log(`Polling attempt ${attempt + 1}: Status - ${runStatus}`);
 
     if (runStatus === "completed") {
       console.log("Run completed. Retrieving messages...");
 
-      // Retrieve messages from the thread
+      // Retrieve messages from the thread see docs
       const messages = await openai.beta.threads.messages.list(run.thread_id);
 
       for (const message of messages.data.reverse()) {
         console.log(`${message.role} > ${message.content[0].text.value}`);
+        if (message.role === "assistant") {
+          try {
+            const parsedData = JSON.parse(message.content[0].text.value);
+
+            if (parsedData && Array.isArray(parsedData.instances)) {
+              result.push(...parsedData.instances);
+            } else {
+              console.error(
+                "Parsed data is not in the expected format:",
+                parsedData
+              );
+            }
+          } catch (error) {
+            console.error("Failed to parse JSON:", error);
+          }
+        }
       }
+
+      console.log("Final Result Array:", result);
 
       const assistantResponse = messages.data[messages.data.length - 1];
       console.log("Assistant Response: ", assistantResponse);
-      return assistantResponse;
+      return result;
     }
 
     // Error checking when failed
