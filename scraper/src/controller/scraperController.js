@@ -1,6 +1,8 @@
 import { chromium } from "playwright";
-import { workerHandler } from "../jobs/job-handler.js";
-
+import { Worker, Job } from "bullmq";
+import dotenv from "dotenv";
+//import { workerHandler } from "../jobs/job-handler.js";
+dotenv.config();
 // general control of the scraper init, start, open page, close page, set url
 export class ScrapeController {
   constructor() {
@@ -11,9 +13,9 @@ export class ScrapeController {
     this.pages = [];
   }
 
-  //initialize puppeteer and the scraper
+  //initialize puppeteer, bullmq worker and the scraper
   async initialize() {
-    this.worker = workerHandler;
+    this.startWorker();
     this.browser = await chromium.launch({
       headless: true,
     });
@@ -65,15 +67,16 @@ export class ScrapeController {
   }
 
   //launch the scraper
-  async start() {
+  async startScrape(url, selectors) {
     try {
       if (!this.browser) {
         throw new Error("Browser not initilized!");
       }
 
-      const selectors = {};
-      //!const url = "https://www.vultr.com/pricing/#cloud-gpu";
-      const url = "";
+      if (!url || !selectors) {
+        console.error("No url or selectors set!");
+        throw new Error("No url or selectors set!");
+      }
       await this.scrapeURL(url, selectors);
     } catch (error) {
       console.error(error);
@@ -90,7 +93,7 @@ export class ScrapeController {
       console.log(`Navigating to ${url}`);
       await newPage.page.goto(url, { waitUntil: "domcontentloaded" }); // wait till the content is loaded
       this.scraper.setPage(newPage.page);
-      const data = await this.scraper.extractData();
+      const data = await this.scraper.extractData(selectors); // pass selectors
       console.log("Scraped data: ", data);
     } catch (error) {
       console.error(error);
@@ -98,6 +101,46 @@ export class ScrapeController {
       await this.closePage(newPage.id);
       console.log("Page closed: " + newPage.id);
     }
+  }
+
+  // initialize worker
+  async startWorker() {
+    this.worker = new Worker(
+      "myqueue",
+      async (job) => {
+        try {
+          console.log(`Processing jobID ${job.id} with data:`, job.data);
+          const result = await this.startScrape(
+            job.data.url,
+            job.data.selectors
+          );
+          return result;
+        } catch (error) {
+          console.error(`Error processing job ${job.id}:`, error);
+          throw error;
+        }
+      },
+      {
+        connection: {
+          host: process.env.REDIS_HOST,
+          port: 6379,
+        },
+      }
+    );
+
+    //Lifecycle events
+    this.worker.on("ready", () => {
+      console.log("Worker connected to Redis and ready to process jobs.");
+    });
+
+    this.worker.on("failed", (job, err) => {
+      console.error(`Job ${job.id} failed with error:`, err.message);
+    });
+
+    this.worker.on("progress", (job, progress) => {
+      // Do something with the return value.
+      console.log(job.data, progress);
+    });
   }
 }
 
@@ -116,18 +159,16 @@ export class Scraper {
     return this.page;
   }
 
-  async extractData() {
+  async extractData(selectors) {
     console.log("...scraping");
     try {
       if (!this.page) {
         throw new Error("Page is not set, set Page first!");
       }
 
-      const selector = `#cloud-gpu > div:nth-child(5)`;
+      await this.page.waitForSelector(selectors);
 
-      await this.page.waitForSelector(selector);
-
-      const extractedText = await this.page.locator(selector).textContent();
+      const extractedText = await this.page.locator(selectors).textContent();
 
       return cleanWhitespace(extractedText);
     } catch (error) {

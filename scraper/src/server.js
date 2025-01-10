@@ -11,6 +11,7 @@ dotenv.config();
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const host = "0.0.0.0"; //enable access from outside the container
+const scrapeController = new ScrapeController();
 
 app.use(bodyParser.json());
 app.use(express.json());
@@ -18,17 +19,11 @@ app.use(cors());
 app.use(router);
 
 (async () => {
-  // Initialize the scraper
-  const sc = new ScrapeController();
   try {
-    await sc.initialize();
-    await sc.start();
-  } catch (error) {
-    console.error(error);
-  }
+    // Launch scraper
+    await scrapeController.initialize();
 
-  // Start server and listen
-  try {
+    // Start server and listen
     app.listen(PORT, host, function () {
       console.log(`starting app on port: ${PORT}`);
     });
@@ -37,5 +32,3 @@ app.use(router);
     process.exit(1);
   }
 })();
-
-/**/

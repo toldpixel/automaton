@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
 import { Worker, Job } from "bullmq";
+
 dotenv.config();
 
 export const workerHandler = new Worker(
   "myqueue",
   async (job) => {
     try {
-      console.log(`Processing job ${job.id} with data:`, job.data);
+      console.log(`Processing jobID ${job.id} with data:`, job.data);
       //const result = await scrapeWebsite(job.data.url);
       const result = true;
       return result;

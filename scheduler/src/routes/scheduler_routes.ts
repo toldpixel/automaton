@@ -19,7 +19,6 @@ import {
 export const router = express.Router();
 
 //! Specific routes first -> dynamic routes last
-
 // Lists all prioritized jobs
 router.get("/api/jobs/prioritized", listPrioritizedJobs);
 
