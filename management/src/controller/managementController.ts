@@ -21,8 +21,8 @@ export const addWebsite = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { url, selectors, metadata } = req.body;
-    if (!url || !selectors || !metadata) {
+    const { url, selectors, Metadata } = req.body;
+    if (!url || !selectors || !Metadata) {
       res.status(500).json({ error: "Missing url or selector" });
       return;
     }
@@ -30,13 +30,13 @@ export const addWebsite = async (
     // Create our metadata first
     const createdMetadata = await prisma.metadata.create({
       data: {
-        priority: metadata.priority,
-        scheduleFrequency: metadata.scheduleFrequency,
-        addedAt: new Date(metadata.addedAt),
+        priority: Metadata.priority,
+        scheduleFrequency: Metadata.scheduleFrequency,
+        addedAt: new Date(Metadata.addedAt),
       },
     });
 
-    // Prisma associate the existing Metadata entry with id
+    // Prisma associate the new created existing Metadata entry with id
     const newWebsite: Prisma.WebsiteCreateInput = {
       url: url,
       selectors: selectors,
@@ -49,11 +49,11 @@ export const addWebsite = async (
 
     const createdWebsite = await store.create(newWebsite);
 
-    // Fetch full Website object with Metadata
+    // Fetch with Metadata from prisma
     const fullWebsite = await prisma.website.findUnique({
       where: { id: createdWebsite.id },
       include: {
-        Metadata: true, // Fetch related Metadata
+        Metadata: true,
       },
     });
 
@@ -64,8 +64,8 @@ export const addWebsite = async (
     // Send the job to scheduler, make sure its the correct type - good bye
     const schedulerResponse = await postJobToScheduler(fullWebsite);
     if (!schedulerResponse) {
-      console.error("Scheduler error response null!");
-      throw new Error("Scheduler error response null!");
+      console.error("Scheduler sends error response null!");
+      throw new Error("Scheduler sends error response null!");
     }
 
     res.status(201).json(createdWebsite);
