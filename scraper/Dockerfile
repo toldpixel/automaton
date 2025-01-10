@@ -10,14 +10,14 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Plawright dependencies
+RUN npx playwright install --with-deps
+
 # Copy the rest of the application code
 COPY . .
-
-# Build the application (if needed)
-RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 6666
 
 # Command to run the app
-CMD ["node", "run", "start"]
+CMD ["npm", "run", "start"]

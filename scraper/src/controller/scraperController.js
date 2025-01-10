@@ -170,81 +170,8 @@ export class ScrapeController {
     }
   }
 
-  // ChatGPT Assistant initialization
-  /*async createAssistant() {
-    try {
-      //get all assistants first
-      const myAssistants = await openai.beta.assistants.list({
-        order: "desc",
-        limit: "20",
-      });
-      // Check if Assistant already exists
-      if (myAssistants.data.length === 0) {
-        this.assistant = await openai.beta.assistants.create({
-          name: "Automaton",
-          instructions: `Whenever I provide you with a text, extract all relevant information and return a JSON object with the following structure filled out: { 
-          "instances": [
-            {
-              "name": "",
-              "gpu": "",
-              "storage": "",
-              "network": "",
-              "egress": "",
-              "price_monthly": "",
-              "price_hourly": ""
-            }
-          ]
-        }  If a piece of information is missing or unavailable in the text, set the corresponding value to empty string "". Ensure the JSON response is valid, well-structured.
-        `,
-          model: "gpt-4o-mini",
-          response_format: "auto",
-        });
-
-        // create assistant thread too
-        await this.createAssistantThread([
-          {
-            role: "user",
-            content: "Initialize the assistant thread.",
-          },
-        ]);
-        console.log("New Assistant created and ready for queries!");
-      } else {
-        // gets the last Assistant from the list
-        const automatonAssistant = myAssistants.data.find(
-          (assistant) => assistant.name === "Automaton"
-        );
-
-        if (automatonAssistant) {
-          console.log("Found Automaton Assistant:", automatonAssistant);
-        } else {
-          console.log("No assistant with the name 'Automaton' found.");
-          throw Error("No assistant with the name 'Automaton' found.");
-        }
-
-        await this.createAssistantThread([
-          {
-            role: "user",
-            content: "Initialize the assistant thread.",
-          },
-        ]);
-
-        this.assistant = await openai.beta.assistants.retrieve(
-          automatonAssistant.id
-        );
-      }
-    } catch (error) {
-      console.error(error);
-      this.closeAssistant();
-      this.deleteAssitantThread();
-      throw new Error(error);
-    }
-  }*/
-
   async createAssistantThread() {
     try {
-      /*this.assistantThread = await openai.beta.threads.create({
-        messages: messages || [],
-      });*/
       const newThread = await openai.beta.threads.create({
         messages: [],
       });
@@ -293,14 +220,6 @@ export class ScrapeController {
     }
   }
 
-  /* async closeAssistant() {
-    if (this.assistant) {
-      await openai.beta.assistants.del(this.assistant.id);
-      return true;
-    }
-    return false;
-  }*/
-
   // ChatGPT Messaging
   async assistantMessage(inputText) {
     console.log(this.assistantThread);
@@ -342,45 +261,7 @@ export class ScrapeController {
         runStatus,
         run
       );
-      /*while (runStatus !== "completed" && attempt < maxRetries) {
-        console.log(`Polling attempt ${attempt + 1}: Status - ${runStatus}`);
-        await new Promise((resolve) => setTimeout(resolve, pollingInterval)); // Wait before next poll
 
-        // Fetch the latest run status
-        const updatedRun = await openai.beta.threads.runs.retrieve(run.id); //The ID of the run to retrieve.
-        runStatus = updatedRun.status;
-        attempt++;
-      }
-
-      if (runStatus === "completed") {
-        console.log("Run completed. Retrieving messages...");
-
-        // Retrieve messages from the running thread
-        const messages = await openai.beta.threads.messages.list(run.thread_id);
-
-        for (const message of messages.data.reverse()) {
-          console.log(`${message.role} > ${message.content[0].text.value}`);
-        }
-
-        const assistantResponse = messages.data[messages.data.length - 1];
-        console.log("Assistant Response: ", assistantResponse);
-        return assistantResponse;
-      } else {
-        console.error("Polling timed out or run failed. Status:", runStatus);
-        throw new Error("Run did not complete successfully.");
-      }*/
-
-      /*if (run.status === "completed") {
-        messages = await openai.beta.threads.messages.list(run.thread_id);
-        for (const message of messages.data.reverse()) {
-          console.log(`${message.role} > ${message.content[0].text.value}`);
-        }
-        console.log("response: ", message);
-        console.log("Assistant Data: ", response);
-        return response;
-      } else {
-        console.log(run.status);
-      }*/
       return assistantResponse;
     } catch (error) {
       console.error("Assistant failed to send message");
