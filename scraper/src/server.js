@@ -3,32 +3,44 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import dotenv from "dotenv";
-import { router } from "./routes/scraper_routes.js";
+import { createServer } from "http";
 import { ScrapeController } from "./controller/scraperController.js";
 import { dbConnect } from "./config/db.js";
-
+import { Server } from "socket.io";
 dotenv.config();
-
 const app = express();
+const server = createServer(app);
+app.use(bodyParser.json());
+app.use(express.json());
+app.use(cors());
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const host = "0.0.0.0"; //enable access from outside the container
 const scrapeController = new ScrapeController();
 
-app.use(bodyParser.json());
-app.use(express.json());
-app.use(cors());
-app.use(router);
-
 (async () => {
   try {
+    io.on("connection", (socket) => {
+      console.log("Socket.IO connection established. Initializing scraper...");
+      socket.on("disconnect", () => {
+        console.log(`Socket.IO connection ${socket.id} disconnected`);
+      });
+    });
+
     // Launch scraper
-    await scrapeController.initialize();
+    await scrapeController.initialize(io); // pass socket
 
     // Launch database connection
     await dbConnect();
 
     // Start server and listen
-    app.listen(PORT, host, function () {
+    server.listen(PORT, host, function () {
       console.log(`starting app on port: ${PORT}`);
     });
   } catch (error) {

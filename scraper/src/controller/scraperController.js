@@ -1,9 +1,8 @@
 import { chromium } from "playwright";
-import { Worker, Job } from "bullmq";
+import { Worker } from "bullmq";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { saveResultToDB } from "../api-clients/storage.js";
-import { notifyManagement } from "../api-clients/management-client.js";
 
 dotenv.config();
 
@@ -12,6 +11,7 @@ const openai = new OpenAI();
 // general control of the scraper init, start, open page, close page, set url
 export class ScrapeController {
   constructor() {
+    this.io = null;
     this.browser = null; // playwright browser
     this.scraper = null;
     this.assistant = null; // chatGPT assistant
@@ -22,7 +22,8 @@ export class ScrapeController {
   }
 
   //initialize puppeteer, bullmq worker and the scraper
-  async initialize() {
+  async initialize(io) {
+    this.io = io;
     await this.retrieveAssistant(); // Get ChatGPT Assistant
     await this.createAssistantThread(); // Create ChatGPT Assistant Thread for sending messages
     await this.startWorker();
@@ -128,6 +129,12 @@ export class ScrapeController {
           );
 
           const savedResult = saveResultToDB(scrapeResult, job.data);
+
+          this.io.emit("scrape:completed", {
+            jobId: job.id,
+            result: scrapeResult,
+          });
+
           return savedResult;
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
@@ -146,21 +153,21 @@ export class ScrapeController {
 
     this.worker.on("ready", () => {
       console.log("Worker connected to Redis and ready to process jobs.");
-      notifyManagement("ready", { status: "Worker is ready" });
+      this.io.emit("worker-ready", { status: "Worker is ready" });
     });
 
     this.worker.on("completed", (job, returnvalue) => {
       console.log(`Job ${job.id} completed with return value:`, returnvalue);
-      notifyManagement("completed", {
+      this.io.emit("worker-progress", {
         jobId: job.id,
-        returnvalue,
-        status: "Job completed successfully",
+        progress,
+        status: "Job in progress",
       });
     });
 
     this.worker.on("progress", (job, progress) => {
       console.log(`Job ${job.id} progress:`, progress);
-      notifyManagement("progress", {
+      this.io.emit("worker-progress", {
         jobId: job.id,
         progress,
         status: "Job in progress",
@@ -169,7 +176,7 @@ export class ScrapeController {
 
     this.worker.on("failed", (job, err) => {
       console.error(`Job ${job.id} failed with error:`, err.message);
-      notifyManagement("failed", {
+      this.io.emit("worker-failed", {
         jobId: job.id,
         error: err.message,
         status: "Job failed",
@@ -178,7 +185,7 @@ export class ScrapeController {
 
     this.worker.on("error", (err) => {
       console.error("Worker encountered an error:", err);
-      this.notifyManagement("error", { error: err.message });
+      this.io.emit("worker-error", { error: err.message });
     });
   }
 
