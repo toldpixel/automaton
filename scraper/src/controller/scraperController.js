@@ -3,6 +3,7 @@ import { Worker, Job } from "bullmq";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { saveResultToDB } from "../api-clients/storage.js";
+import { notifyManagement } from "../api-clients/management-client.js";
 
 dotenv.config();
 
@@ -142,17 +143,42 @@ export class ScrapeController {
     );
 
     //Lifecycle events
+
     this.worker.on("ready", () => {
       console.log("Worker connected to Redis and ready to process jobs.");
+      notifyManagement("ready", { status: "Worker is ready" });
+    });
+
+    this.worker.on("completed", (job, returnvalue) => {
+      console.log(`Job ${job.id} completed with return value:`, returnvalue);
+      notifyManagement("completed", {
+        jobId: job.id,
+        returnvalue,
+        status: "Job completed successfully",
+      });
+    });
+
+    this.worker.on("progress", (job, progress) => {
+      console.log(`Job ${job.id} progress:`, progress);
+      notifyManagement("progress", {
+        jobId: job.id,
+        progress,
+        status: "Job in progress",
+      });
     });
 
     this.worker.on("failed", (job, err) => {
       console.error(`Job ${job.id} failed with error:`, err.message);
+      notifyManagement("failed", {
+        jobId: job.id,
+        error: err.message,
+        status: "Job failed",
+      });
     });
 
-    this.worker.on("progress", (job, progress) => {
-      // Do something with the return value.
-      console.log(job.data, progress);
+    this.worker.on("error", (err) => {
+      console.error("Worker encountered an error:", err);
+      this.notifyManagement("error", { error: err.message });
     });
   }
 
@@ -231,7 +257,7 @@ export class ScrapeController {
       console.error("Assistant thread not created!");
       throw Error("Assistant thread not created!");
     }
-    const messages = [];
+
     try {
       const response = await openai.beta.threads.messages.create(
         this.assistantThread.id,
