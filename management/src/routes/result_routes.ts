@@ -19,7 +19,7 @@ router.get("/api/results", getAllScrapeResults);
 router.post("/api/results", createScrapeResult);
 
 // Route to management to get the correct formated data
-router.get("/api/results/download", getDataInCSV);
+router.post("/api/results/download", getDataInCSV);
 
 // Route to get a scrape result by ID
 router.get("/api/results/:id", getScrapeResultById);
