@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { Scrape } from "@/types/scraperesult";
 export default function Home() {
-  const { results, overviewResults } = useScrapeResult();
+  const { results, overviewResults, setResults } = useScrapeResult();
   const [activeView, setActiveView] = useState<string>("Overview"); // Default state
   const [workerStatus, setWorkerStatus] = useState<string>("idle"); // For Lifecycle
   const [isConnected, setIsConnected] = useState(false);
@@ -210,6 +210,7 @@ export default function Home() {
                   {activeView === "Overview" && (
                     <ScrollableDataTable
                       results={results}
+                      setResults={setResults}
                       selectedRows={selectedRows}
                       setSelectedRows={setSelectedRows} // for downloading
                       setIsSelected={setIsSelected} // for overview or individual chart view
