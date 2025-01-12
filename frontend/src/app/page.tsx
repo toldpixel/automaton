@@ -3,19 +3,29 @@ import { ChartComponent } from "@/components/chart";
 import Menubar from "@/components/menubar";
 import { Button } from "@/components/ui/button";
 import { useScrapeResult } from "@/context/ScrapeResultContext";
-import ScrollableDataTable from "@/components/datatable";
+import { ScrollableDataTable } from "@/components/datatable";
 import React, { useEffect, useState } from "react";
 import { ScrapeProvider } from "@/context/chartBoxPlotContext";
 import Add from "@/components/menubar/add";
 import { WebsocketEventEnum } from "../types/events";
+import { Download, FileText } from "lucide-react";
 import { socket } from "../socket";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Scrape } from "@/types/scraperesult";
 export default function Home() {
-  const { results } = useScrapeResult();
+  const { results, overviewResults } = useScrapeResult();
   const [activeView, setActiveView] = useState<string>("Overview"); // Default state
   const [workerStatus, setWorkerStatus] = useState<string>("idle"); // For Lifecycle
   const [isConnected, setIsConnected] = useState(false);
   const [transport, setTransport] = useState("N/A");
-
+  const [downloadFormat, setDownloadFormat] = useState<"csv" | "excel">("csv");
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [isSelected, setIsSelected] = useState<string>(""); // For Overview Title
+  // Handles the status updates "Scraper ready"
   useEffect(() => {
     function onConnect() {
       console.log("Connected!", socket.id);
@@ -65,6 +75,53 @@ export default function Home() {
     };
   }, []);
 
+  // Excel or CSV Download
+  const handleDownload = async () => {
+    if (selectedRows.size === 0) {
+      alert("Please select at least one item to download.");
+      return;
+    }
+
+    const list = Array.from(selectedRows);
+
+    const newDownload = {
+      list: list,
+      format: downloadFormat,
+    };
+
+    console.log(newDownload);
+    const response = await fetch("/api/scrape-results/download", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newDownload),
+    });
+
+    if (!response.ok) {
+      alert("Failed to download the file. Please try again.");
+      return;
+    }
+
+    const contentDisposition = response.headers.get("Content-Disposition"); //Filename
+    const contentType = response.headers.get("Content-Type"); //runtime errors
+    const blob = await response.blob();
+
+    const fileExtension = downloadFormat === "csv" ? "csv" : "xlsx";
+
+    const filename =
+      contentDisposition?.match(/filename="(.+)"/)?.[1] ||
+      `scrape-results.${fileExtension}`;
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const getStatusColor = () => {
     switch (workerStatus) {
       case "ready":
@@ -87,32 +144,57 @@ export default function Home() {
       <div className="container mx-auto">
         <div className="h-screen flex-col space-y-5 items-center justify-center text-white">
           <div className="flex justify-between items-center">
-            <div className="text-[48px] font-bold ">Dashboard</div>
+            <div className="text-[48px] font-bold ">Automaton</div>
             <div className="">
-              <Button
-                size="lg"
-                className="text-black bg-[#FAFAFA] hover:bg-slate-200"
-              >
-                Download
-              </Button>
+              <Popover>
+                <PopoverTrigger>
+                  <div className="flex items-center space-x-2 bg-[#171717] rounded py-2 px-6 ">
+                    <div>
+                      <span>
+                        <Download />
+                      </span>
+                    </div>
+                    <div>Get Data</div>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className=" text-[#909098] space-x-2 space-y-2 items-center justify-between border border-[#27272A] bg-[#27272A]">
+                  <div className="flex items-center justify-between space-x-2">
+                    <FileText className="text-green-500" />
+                    <select
+                      id="format"
+                      value={downloadFormat}
+                      onChange={(e) =>
+                        setDownloadFormat(e.target.value as "csv" | "excel")
+                      }
+                      className="bg-gray-800 text-white rounded px-2 py-1"
+                    >
+                      <option value="csv">CSV</option>
+                      <option value="excel">XLSX</option>
+                    </select>
+                    <Button onClick={handleDownload}>Download</Button>
+                  </div>
+                  <hr className="border border-[#727880]"></hr>
+                  <div>{selectedRows.size} selected</div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-          <div className="inline-flex space-x-2 bg-[#27272A] p-1 rounded-lg">
-            <div>
-              <Button>Overview</Button>
-            </div>
-            <div>
-              <Button>Scraper</Button>
-            </div>
-          </div>
+          {/* <div className="inline-flex space-x-2 bg-[#27272A] p-1 rounded-lg"></div> */}
           <ScrapeProvider>
             <div className="flex rounded gap-5 ">
               <div className="w-1/2 border border-[#27272A] p-5">
-                <div className="mb-5">Overview</div>
+                <div className="mb-5">
+                  {isSelected ? (
+                    <div>
+                      {isSelected.charAt(0).toUpperCase() + isSelected.slice(1)}
+                    </div>
+                  ) : (
+                    <div>Overview</div>
+                  )}
+                </div>
                 <div>
                   {/* Sets ScrapeProviderContext in Scrollable DataTable to change the Chart Data */}
-
-                  <ChartComponent />
+                  <ChartComponent overviewResults={overviewResults} />
                 </div>
               </div>
               <div className="w-1/2 border text-[#909098] border-[#27272A] p-5">
@@ -126,9 +208,13 @@ export default function Home() {
 
                   {activeView === "Add" && <Add />}
                   {activeView === "Overview" && (
-                    <ScrollableDataTable results={results} />
+                    <ScrollableDataTable
+                      results={results}
+                      selectedRows={selectedRows}
+                      setSelectedRows={setSelectedRows} // for downloading
+                      setIsSelected={setIsSelected} // for overview or individual chart view
+                    />
                   )}
-                  {activeView === "Settings" && <Add />}
                 </div>
               </div>
             </div>

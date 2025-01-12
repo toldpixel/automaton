@@ -1,6 +1,6 @@
 "use client";
 
-import { ScrapeResult } from "@/types/scraperesult";
+import { Scrape, ScrapeResult } from "@/types/scraperesult";
 import React, {
   createContext,
   useContext,
@@ -16,6 +16,8 @@ import React, {
 interface ScrapeResultContextType {
   results: ScrapeResult[];
   setResults: Dispatch<SetStateAction<ScrapeResult[]>>;
+  setOverviewResults: Dispatch<SetStateAction<Scrape[]>>;
+  overviewResults: Scrape[];
   fetchResults: () => Promise<void>; // Add a method to fetch results manually
 }
 
@@ -29,6 +31,7 @@ export const ScrapeResultProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
   const [results, setResults] = useState<ScrapeResult[]>([]);
+  const [overviewResults, setOverviewResults] = useState<Scrape[]>([]);
 
   // Fetch function to retrieve scrape results
   const fetchResults = async () => {
@@ -39,13 +42,19 @@ export const ScrapeResultProvider: React.FC<{
           `Error fetching scrape results: ${response.statusText}`
         );
       }
-      const data: ScrapeResult[] = await response.json();
-      console.log(data);
-      setResults(data);
+      const scrapeResult: ScrapeResult[] = await response.json();
+      const overviewResult = overviewPrepare(scrapeResult);
+      setResults(scrapeResult);
+      setOverviewResults(overviewResult);
     } catch (error) {
       console.error("Error fetching scrape results:", error);
     }
   };
+
+  // Prepare overview data for the chart
+  function overviewPrepare(scrapeResult: ScrapeResult[]): Scrape[] {
+    return scrapeResult.flatMap((resultData) => resultData.result || []);
+  }
 
   // Fetch results on mount
   useEffect(() => {
@@ -53,7 +62,15 @@ export const ScrapeResultProvider: React.FC<{
   }, []);
 
   return (
-    <ScrapeResultContext.Provider value={{ results, setResults, fetchResults }}>
+    <ScrapeResultContext.Provider
+      value={{
+        results,
+        overviewResults,
+        setResults,
+        fetchResults,
+        setOverviewResults,
+      }}
+    >
       {children}
     </ScrapeResultContext.Provider>
   );
