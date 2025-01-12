@@ -6,6 +6,7 @@ import {
   deleteScrapeResult,
   getAllScrapeResults,
   getDataInCSV,
+  deleteSelectedScrapeResults,
 } from "../controller/resultController";
 
 export const router = express.Router();
@@ -20,6 +21,9 @@ router.post("/api/results", createScrapeResult);
 
 // Route to management to get the correct formated data
 router.post("/api/results/download", getDataInCSV);
+
+// Delete selected results one or many
+router.post("/api/results/delete", deleteSelectedScrapeResults);
 
 // Route to get a scrape result by ID
 router.get("/api/results/:id", getScrapeResultById);

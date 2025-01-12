@@ -190,3 +190,33 @@ export const deleteScrapeResult = async (
     res.status(500).json({ error: "Failed to delete scrape result" });
   }
 };
+
+export const deleteSelectedScrapeResults = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { list } = req.body;
+    if (!Array.isArray(list) || list.length === 0) {
+      res.status(400).json({ error: "No valid IDs provided" });
+      return;
+    }
+
+    const deleteSelected = await store.deleteSelected(list);
+
+    if (!deleteSelected) {
+      res
+        .status(404)
+        .json({ error: "No matching scrape results found to delete." });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Scrape result deleted successfully",
+      deletedCount: deleteSelected,
+    });
+  } catch (error) {
+    console.error("Error deleting scrape result:", error);
+    res.status(500).json({ error: "Failed to delete scrape result" });
+  }
+};

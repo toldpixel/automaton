@@ -1,4 +1,4 @@
-import { Document, model, Schema } from "mongoose";
+import { DeleteResult, Document, model, Schema } from "mongoose";
 import { ScrapeResultModel } from "../config/db";
 import { ScrapeResult } from "../types/result";
 
@@ -86,6 +86,24 @@ export class ScrapeResultStore {
         throw new Error("Scrape result not found");
       }
       return result.toObject() as ScrapeResult;
+    } catch (error) {
+      console.error("Error deleting scrape result:", error);
+      throw new Error("Failed to delete scrape result");
+    }
+  }
+
+  async deleteSelected(list: string[]): Promise<DeleteResult | number> {
+    try {
+      const result = await ScrapeResultModel.deleteMany({
+        id: { $in: list },
+      });
+
+      if (result.deletedCount === 0) {
+        console.error("Nothing deletes from selected");
+        return 0;
+      }
+
+      return result;
     } catch (error) {
       console.error("Error deleting scrape result:", error);
       throw new Error("Failed to delete scrape result");
