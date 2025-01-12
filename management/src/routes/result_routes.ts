@@ -5,16 +5,21 @@ import {
   updateScrapeResult,
   deleteScrapeResult,
   getAllScrapeResults,
+  getDataInCSV,
 } from "../controller/resultController";
 
 export const router = express.Router();
 
 // ChatGPT Boilerplate
 // Route to get all scrape results without pagination
+
 router.get("/api/results", getAllScrapeResults);
 
 // Route to create a new scrape result
 router.post("/api/results", createScrapeResult);
+
+// Route to management to get the correct formated data
+router.get("/api/results/download", getDataInCSV);
 
 // Route to get a scrape result by ID
 router.get("/api/results/:id", getScrapeResultById);

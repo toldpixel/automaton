@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient, Website } from "@prisma/client";
+import { ScrapeResult } from "../types/result";
 
 //Prisma ORM for DB requests and types
 const prisma = new PrismaClient();

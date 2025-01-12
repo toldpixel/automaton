@@ -15,6 +15,20 @@ export class ScrapeResultStore {
     }
   }
 
+  // Get all Scrape results according to requested Ids
+  async getListOfResults(listOfResultIds: string[]): Promise<ScrapeResult[]> {
+    try {
+      const results = await ScrapeResultModel.find({
+        id: { $in: listOfResultIds },
+      });
+
+      return results as ScrapeResult[];
+    } catch (error) {
+      console.error("Error fetching scrape results:", error);
+      throw new Error("Failed to retrieve scrape results");
+    }
+  }
+
   // Create a new scrape result
   async create(result: ScrapeResult): Promise<ScrapeResult> {
     try {
