@@ -34,8 +34,15 @@ export default function Home() {
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
-    socket.on("worker-progress", () => setWorkerStatus("progress"));
-    socket.on("worker-completed", () => setWorkerStatus("completed"));
+    socket.on("worker-progress", (data) => {
+      console.log("progress data:", data.progress);
+      setTimeout(() => setWorkerStatus("progress"), 2000);
+    });
+    socket.on("worker-completed", (data) => {
+      console.log(data);
+      setWorkerStatus("completed");
+      setTimeout(() => setWorkerStatus("ready"), 2000);
+    });
     socket.on("worker-failed", () => setWorkerStatus("failed"));
     socket.on("worker-error", () => setWorkerStatus("error"));
     socket.on("some event", (payload) => {
@@ -63,13 +70,13 @@ export default function Home() {
       case "ready":
         return "bg-green-500";
       case "progress":
-        return "bg-blue-500";
+        return "bg-yellow-500";
       case "completed":
         return "bg-purple-500";
       case "failed":
         return "bg-red-500";
       case "error":
-        return "bg-yellow-500";
+        return "bg-red-500";
       default:
         return "bg-gray-500";
     }
