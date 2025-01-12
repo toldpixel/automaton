@@ -19,13 +19,21 @@ export class ScrapeController {
     this.worker = null; // bullmq worker
     this.pageCount = 0;
     this.pages = [];
+    this.scraperInitialized = false; //prevent multiple initialization
+    this.isInitialized = false;
   }
 
   //initialize puppeteer, bullmq worker and the scraper
   async initialize(io) {
+    if (this.isInitialized) {
+      console.log("Scraper already initialized. Skipping...");
+      return;
+    }
+    this.isInitialized = true;
     this.io = io;
     await this.retrieveAssistant(); // Get ChatGPT Assistant
     await this.createAssistantThread(); // Create ChatGPT Assistant Thread for sending messages
+
     await this.startWorker();
     this.browser = await chromium.launch({
       headless: true,
@@ -158,9 +166,9 @@ export class ScrapeController {
 
     this.worker.on("completed", (job, returnvalue) => {
       console.log(`Job ${job.id} completed with return value:`, returnvalue);
-      this.io.emit("worker-progress", {
+      this.io.emit("worker-completed", {
         jobId: job.id,
-        progress,
+        progress: returnvalue,
         status: "Job in progress",
       });
     });

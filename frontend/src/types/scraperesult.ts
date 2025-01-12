@@ -21,7 +21,7 @@ export interface Metadata {
 export interface ScrapeResult {
   id?: string;
   url?: string;
-  selectors?: Record<string, any>; // Mixed type allows an arbitrary object
+  selectors?: string; // Mixed type allows an arbitrary object
   createdAt?: Date;
   metadataId?: string;
   Metadata?: Metadata; // Embedded Metadata schema

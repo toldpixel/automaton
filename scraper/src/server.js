@@ -20,22 +20,24 @@ const io = new Server(server, {
   },
 });
 
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const PORT = parseInt(process.env.PORT, 10);
 const host = "0.0.0.0"; //enable access from outside the container
 const scrapeController = new ScrapeController();
 
 (async () => {
   try {
-    io.on("connection", (socket) => {
-      console.log("Socket.IO connection established. Initializing scraper...");
+    //initialize once
+    //establish a socket communication first
+    io.on("connection", async (socket) => {
+      console.log("a user connected...");
+      socket.emit("worker-ready", { status: "Worker is ready" });
       socket.on("disconnect", () => {
         console.log(`Socket.IO connection ${socket.id} disconnected`);
       });
     });
-
     // Launch scraper
-    await scrapeController.initialize(io); // pass socket
-
+    //await scrapeController.initialize(io); // pass socket
+    await scrapeController.initialize(io);
     // Launch database connection
     await dbConnect();
 
