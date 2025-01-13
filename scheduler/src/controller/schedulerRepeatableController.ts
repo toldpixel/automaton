@@ -61,6 +61,7 @@ export const removeRepeatableJob = async (
   res: Response
 ): Promise<void> => {
   const { key } = req.params;
+  console.log(key);
   try {
     const removed = await schedulerModel.removeRepeatableJob(key);
     if (!removed) {

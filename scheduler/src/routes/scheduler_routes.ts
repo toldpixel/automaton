@@ -25,7 +25,6 @@ router.get("/api/jobs/prioritized", listPrioritizedJobs);
 // Repeatable job routes
 router.get("/api/jobs/repeatable", getAllRepeatableJobs);
 router.post("/api/jobs/repeatable", createRepeatableJob);
-router.delete("/api/jobs/repeatable/:key", removeRepeatableJob);
 
 // Non-repeatable job routes
 router.post("/api/jobs/non-repeatable", createNonRepeatableJob);
@@ -42,3 +41,4 @@ router.get("/api/jobs/non-repeatable/failed", listFailedNonRepeatableJobs);
 // Dynamic non-repeatable job routes
 router.get("/api/jobs/non-repeatable/:id", getNonRepeatableJobById);
 router.delete("/api/jobs/non-repeatable/:id", deleteNonRepeatableJobById);
+router.delete("/api/jobs/repeatable/:key", removeRepeatableJob);
