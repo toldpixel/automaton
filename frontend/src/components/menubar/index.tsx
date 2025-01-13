@@ -64,8 +64,12 @@ const Menubar = ({
         <Bot className={`${isSwitchChecked ? "text-green-500" : ""}`} />
       </div>
       <div className="flex items-center gap-2">
-        <div className={`w-8 h-8 rounded-full ${statusColor}`} />
-        <span>Scraper {status}</span>
+        <div
+          className={`w-8 h-8 rounded-full transition-all duration-300 ${statusColor}`}
+        />
+        <span className="min-w-[200px] text-ellipsis overflow-hidden whitespace-nowrap">
+          Scraper {status}
+        </span>
       </div>
     </div>
   );

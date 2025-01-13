@@ -57,7 +57,7 @@ export default function Home() {
 
     socket.on("worker-progress", (data) => {
       console.log("progress data:", data.progress);
-      setTimeout(() => setWorkerStatus("progress"), 3000);
+      setTimeout(() => setWorkerStatus("processing"), 3000);
       console.log(
         `Worker progress for ${data.id.split(":")[1]}:`,
         data.progress
@@ -65,7 +65,7 @@ export default function Home() {
       const id = data.id.split(":")[1];
       setRowStatuses((prev) => ({
         ...prev,
-        [id]: { status: "progress", color: "text-yellow-500" },
+        [id]: { status: "processing", color: "text-yellow-500" },
       }));
     });
 
@@ -169,7 +169,7 @@ export default function Home() {
     switch (workerStatus) {
       case "ready":
         return "bg-green-500";
-      case "progress":
+      case "processing":
         return "bg-yellow-500";
       case "completed":
         return "bg-purple-500";

@@ -6,7 +6,8 @@ export default async function handler(
   res: NextApiResponse<ScrapeResult[] | ScrapeResult | { error: string }>
 ) {
   //delete repeatable
-  const resultUrl = "http://localhost:5000/api/websites/delete";
+  const schedulerUrl = "http://localhost:5000/api/websites/delete";
+  const resultUrl = "http://localhost:5000/api/results/delete";
   try {
     const { list } = req.body;
 
@@ -14,8 +15,8 @@ export default async function handler(
       list: list,
     };
 
-    console.log(deleteList);
-    const response = await fetch(resultUrl, {
+    //Delete repeatable jobs from scheduler
+    const responseScheduler = await fetch(schedulerUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -23,9 +24,27 @@ export default async function handler(
       body: JSON.stringify(deleteList),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to create scrape result: ${response.statusText}`);
+    if (!responseScheduler.ok) {
+      const error = await responseScheduler.json();
+      throw new Error(
+        `Failed to create scrape result: ${responseScheduler.statusText}`
+      );
+    }
+
+    // Now delete them from mongodb
+    const responseResult = await fetch(resultUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(deleteList),
+    });
+
+    if (!responseResult.ok) {
+      const error = await responseResult.json();
+      throw new Error(
+        `Failed to create scrape result: ${responseResult.statusText}`
+      );
     }
 
     res.status(200).json({
