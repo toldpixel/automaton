@@ -213,8 +213,11 @@ export class ScrapeController {
           }
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
+          //TODO Figure out where to close the browser without errors
+          /*
           this.browser.close();
           console.log("Browser closed.");
+          */
           throw new Error(error);
         }
       },
@@ -223,6 +226,7 @@ export class ScrapeController {
           host: process.env.REDIS_HOST,
           port: 6379,
         },
+        concurrency: 2, //TODO Should be editable in fronend settings Concurrency factor
       }
     );
 
