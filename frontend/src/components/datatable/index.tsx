@@ -204,7 +204,7 @@ export const ScrollableDataTable = ({
                 {selectedRows.has(scrapeResult.id as string) ? "Yes" : "No"}
               </div>
               <div className={`${color}`}>{status}</div>
-              <div>{formatDate(scrapeResult.Metadata?.addedAt as string)}</div>
+              <div>{scrapeResult.Metadata?.addedAt as string}</div>
               <div className="truncate">
                 {extractHostname(scrapeResult.url as string) || "Unknown"}
               </div>
