@@ -3,7 +3,8 @@ import { Worker } from "bullmq";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { saveResultToDB } from "../api-clients/storage.js";
-import { mock } from "../mock-data/mock.js";
+import { generateMockData } from "../mock-data/mock.js";
+import { checkIfJobIsCancelled } from "../api-clients/scheduler.js";
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ export class ScrapeController {
 
   //initialize puppeteer, bullmq worker and the scraper
   async initialize(io) {
-    if (this.isInitialized) {
+    if (this.isInitialized === true) {
       console.log("Scraper already initialized. Skipping...");
       return;
     }
@@ -112,9 +113,7 @@ export class ScrapeController {
       return scrapeResult;
     } catch (error) {
       console.error(error);
-    } finally {
-      if (this.browser) await this.browser.close();
-      console.log("Browser closed.");
+      throw new Error(error);
     }
   }
 
@@ -127,18 +126,20 @@ export class ScrapeController {
       console.log(`Navigating to ${url}`);
       await newPage.page.goto(url, { waitUntil: "domcontentloaded" }); // wait till the content is loaded
       this.scraper.setPage(newPage.page);
-      if (this.useChatGPT) {
+      if (this.useChatGPT === true) {
         //! APPLICATION ONLY SCRAPES IF USECHATGPT IS SET TO TRUE
         console.log("----------- ChatGPT Mode Set ------------");
         scrapedJsonData = await this.scraper.extractData(selectors); // pass selectors, and get back json format
-        assistantData = this.assistantMessage(scrapedJsonData); // pass the scraped data to ChatGPT Assistant for json
+        assistantData = await this.assistantMessage(scrapedJsonData); // pass the scraped data to ChatGPT Assistant for json array
       } else {
         console.log("----------- Testing Mode Set ------------");
-        assistantData = mock; // imported from mock-data just samples for testing
+        assistantData = generateMockData(); // imported from mock-data just samples for testing
       }
+      console.log("ASSISTANT DATA", assistantData);
       return assistantData;
     } catch (error) {
       console.error(error);
+      throw new Error(error);
     } finally {
       await this.closePage(newPage.id);
       console.log("Page closed: " + newPage.id);
@@ -151,14 +152,22 @@ export class ScrapeController {
       "myqueue",
       async (job) => {
         try {
+          const isCancelled = await checkIfJobIsCancelled(job.id);
+
+          // If the job was already cancelled then dont do startScrape
+          if (isCancelled) {
+            console.log(`Job ${job.id} was cancelled.`);
+            return;
+          }
           console.log(`Processing jobID ${job.id} with data:`, job.data);
-          if (this.useChatGPT) {
+          // ChatGPT Mode
+          if (this.useChatGPT === true) {
             const scrapeResult = await this.startScrape(
               job.data.url,
               job.data.selectors
             );
 
-            const savedResult = saveResultToDB(scrapeResult, job.data);
+            const savedResult = await saveResultToDB(scrapeResult, job.data);
 
             this.io.emit("scrape:completed", {
               jobId: job.id,
@@ -184,7 +193,16 @@ export class ScrapeController {
               job.data.selectors
             );
 
-            const savedResult = saveResultToDB(scrapeResult, job.data);
+            if (!checkIfJobIsCancelled(job.id)) {
+              //! If job is canceled from the repeatable queue dont save anything to the database and return
+              //! in case of job is processing but removed from the queue
+              console.log(
+                `Job ${job.id} in queue. Job wont be saved to the database`
+              );
+              return;
+            }
+
+            const savedResult = await saveResultToDB(scrapeResult, job.data);
 
             this.io.emit("scrape:completed", {
               jobId: job.id,
@@ -195,7 +213,9 @@ export class ScrapeController {
           }
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
-          throw error;
+          this.browser.close();
+          console.log("Browser closed.");
+          throw new Error(error);
         }
       },
       {
@@ -340,9 +360,8 @@ export class ScrapeController {
 
       console.log("Runner initialized: ", run);
 
-      // Poll for completion status
-      const pollingInterval = 2000; // Check every 2 seconds
-      const maxRetries = 30; // Stop polling after 30 attempts (1 minute)
+      const pollingInterval = 2000;
+      const maxRetries = 30;
 
       let attempt = 0;
       let runStatus = run.status;
