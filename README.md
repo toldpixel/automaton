@@ -1,63 +1,49 @@
-# automaton
+# README
 
-Simple scraper project
-# Project Name
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-yellow.svg)
-
-A brief description of the project, including its purpose, features, and any key highlights.
+## Automaton
 
 ---
 
 ## Table of Contents
+
 1. [About the Project](#about-the-project)
 2. [Getting Started](#getting-started)
    - [Prerequisites](#prerequisites)
    - [Installation](#installation)
 3. [Usage](#usage)
 4. [Features](#features)
-5. [Contributing](#contributing)
-6. [License](#license)
-7. [Contact](#contact)
-8. [Acknowledgements](#acknowledgements)
 
 ---
 
 ## About the Project
 
-- **Objective**: Explain what problem this project solves.
-- **Technologies Used**: List programming languages, frameworks, and libraries used.
-- **Key Features**: Highlight unique or important features.
+Automaton is a scalable and fully automated system that can scrape multiple websites either once or repeatedly according to specified schedules.
 
-For example:
-- Real-time data processing
-- Modular architecture
-- High test coverage
+- **Technologies Used**  
+  Below is a list of programming languages, frameworks, and libraries used.
 
----
+  - **Backend**
 
-## Getting Started
+    - Socket.io
+    - Bullmq
+    - PostgreSQL
+    - MongoDB
+    - Playwright
+    - Docker
+    - Redis
+    - Prisma
+    - OpenAI
 
-### Prerequisites
-List all tools or dependencies that need to be installed:
-- Python 3.8+
-- Node.js 14+
-- PostgreSQL
+  - **Frontend**
+    - NextJS 19
+    - Tailwind
+    - Rechart
+    - Shadcn/ui
 
-### Installation
-Step-by-step instructions to set up the project locally.
-
-```bash
-# Clone the repository
-git clone https://github.com/username/project-name.git
-
-# Navigate to the project directory
-cd project-name
-
-# Install dependencies
-npm install
-
-# Set up the environment
-cp .env.example .env
+- **Features**
+  - You can add a website and set the scraping priority (High, Medium, Low, None). The scraping frequency can be defined in the frontend with a dropdown menu, which corresponds to predefined Cron jobs.
+  - The results are immediately available after scraping and are plotted in a bar chart. Price information and labels are also displayed.
+  - The system has an AI Mode and a Test Mode. Switching to AI Mode enables scraping with ChatGPT, while Test Mode generates sample data.
+  - If recurring scrapes are set, scraping can be performed concurrently; i.e., multiple websites can be added and scraped at the selected intervals.
+  - The overview provides a simple status indicator showing when the last scrape took place. Each status is displayed in different colors and updates in real time if there is a change.
+  - Scrape tasks can be selected and freely deleted as desired.
