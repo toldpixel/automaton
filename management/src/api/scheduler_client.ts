@@ -45,12 +45,12 @@ export async function deleteJobsFromScheduler(listOfIds: string[]): Promise<{
   message: string;
 } | null> {
   try {
-    for (const id of listOfIds) {
-      console.log(`Deleting job with ID: ${id}`);
+    for (const key of listOfIds) {
+      console.log(`Deleting job with ID: ${key}`);
       const response = await axios.delete(
-        `${SCHEDULER_API_URL}/api/jobs/repeatable/${id}`
+        `${SCHEDULER_API_URL}/api/jobs/repeatable/${key}`
       );
-      console.log(`Deleted job with ID: ${id}`, response.data);
+      console.log(`Deleted job with ID: ${key}`, response.data);
     }
     return {
       success: true,
