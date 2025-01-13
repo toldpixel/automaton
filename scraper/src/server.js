@@ -26,18 +26,22 @@ const scrapeController = new ScrapeController();
 
 (async () => {
   try {
+    // Launch scraper
+    //await scrapeController.initialize(io); // pass socket
+    await scrapeController.initialize(io);
+
     //initialize once
     //establish a socket communication first
     io.on("connection", async (socket) => {
       console.log("a user connected...");
       socket.emit("worker-ready", { status: "Worker is ready" });
+
       socket.on("disconnect", () => {
         console.log(`Socket.IO connection ${socket.id} disconnected`);
       });
+      scrapeController.handleSocketEvents(socket);
     });
-    // Launch scraper
-    //await scrapeController.initialize(io); // pass socket
-    await scrapeController.initialize(io);
+
     // Launch database connection
     await dbConnect();
 

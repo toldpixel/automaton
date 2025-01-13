@@ -3,9 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { Scrape, ScrapeResult } from "@/types/scraperesult";
 import { useScrapeContext } from "@/context/chartBoxPlotContext";
+import { useScrapeResult } from "@/context/ScrapeResultContext";
 import { Button } from "../ui/button";
 import { extractHostname } from "@/utils/url";
 import { formatDate } from "@/utils/date";
+import { RefreshCw } from "lucide-react";
+
+type RowStatus = {
+  [key: string]: {
+    status: string;
+    color: string;
+  };
+};
 
 type Props = {
   results: ScrapeResult[];
@@ -13,6 +22,7 @@ type Props = {
   setSelectedRows: React.Dispatch<React.SetStateAction<Set<string>>>;
   setIsSelected: React.Dispatch<React.SetStateAction<string>>;
   setResults: React.Dispatch<React.SetStateAction<ScrapeResult[]>>;
+  rowStatuses: RowStatus;
 };
 
 export const ScrollableDataTable = ({
@@ -21,8 +31,10 @@ export const ScrollableDataTable = ({
   setResults,
   setSelectedRows,
   setIsSelected,
+  rowStatuses,
 }: Props) => {
   const { setScrapes } = useScrapeContext(); // Sets the chart with the clicked row data in ChartBoxPlotContext
+  const { fetchResults } = useScrapeResult(); // Refresh or rerender page after added data
   const allSelected = selectedRows.size === results.length;
 
   // logic to show the data on the chart when clicking
@@ -64,30 +76,53 @@ export const ScrollableDataTable = ({
     }
 
     try {
-      const list = Array.from(selectedRows);
+      // Separate IDs into repeatable and non-repeatable based on scheduleFrequency
+      const repeatableIds: string[] = [];
+      const nonRepeatableIds: string[] = [];
 
-      // Send a POST request to the delete endpoint
-      const deleteList = {
-        list: list,
-      };
-      const response = await fetch("/api/scrape-results/delete", {
-        method: "POST", // Use POST to send data in the body
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(deleteList),
+      results.forEach((result) => {
+        if (selectedRows.has(result.id as string)) {
+          if (result.Metadata?.scheduleFrequency) {
+            repeatableIds.push(result.id as string);
+          } else {
+            nonRepeatableIds.push(result.id as string);
+          }
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete: ${response.statusText}`);
-      }
+      console.log("Repeatable", repeatableIds);
+      console.log("Non-rep", nonRepeatableIds);
 
-      const { deletedCount } = await response.json();
+      // Helper function to send delete requests
+      const sendDeleteRequest = async (url: string, ids: string[]) => {
+        if (ids.length === 0) return; // Skip if no IDs to delete
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ list: ids }),
+        });
+        if (!response.ok) {
+          throw new Error(
+            `Failed to delete from ${url}: ${response.statusText}`
+          );
+        }
+      };
+
+      // Send requests for repeatable and non-repeatable deletions
+      await Promise.all([
+        sendDeleteRequest("/api/scrape-results/delete", nonRepeatableIds),
+        sendDeleteRequest("/api/scrape-results/deleterep", repeatableIds),
+      ]);
 
       // Filter out the deleted rows from the results
       const remainingResults = results.filter(
-        (result) => !list.includes(result.id as string)
+        (result) => !selectedRows.has(result.id as string)
       );
+
+      // Refresh data
+      await fetchResults();
 
       // Update the state
       setSelectedRows(new Set()); // Clear the selected rows
@@ -95,7 +130,7 @@ export const ScrollableDataTable = ({
       setIsSelected(""); // Reset the selection
       setResults(remainingResults); // Update the table data with remaining results
 
-      alert(`Successfully removed item(s).`);
+      alert(`Successfully removed selected item(s).`);
     } catch (error) {
       console.error("Error deleting selected rows:", error);
       alert("Failed to remove selected items. Please try again.");
@@ -103,7 +138,7 @@ export const ScrollableDataTable = ({
   };
 
   return (
-    <div className="border border-[#27272A] min-h-[300px] max-h-[500px] overflow-y-auto">
+    <div className="border border-[#27272A] min-h-[500px] overflow-y-auto">
       <div className="p-2">
         <Button
           variant="destructive"
@@ -138,40 +173,51 @@ export const ScrollableDataTable = ({
 
       {/* Table Rows */}
       <div>
-        {results.map((scrapeResult) => (
-          <div
-            key={scrapeResult.id}
-            data-id={scrapeResult.id}
-            onClick={() => handleRowClick(scrapeResult)}
-            className="grid gap-2 p-3 border-b border-gray-700 hover:bg-[rgba(255,255,255,0.1)] cursor-pointer"
-            style={{
-              gridTemplateColumns: "5% 20% 20% 25% 30%",
-            }}
-          >
-            {/* Checkbox Column */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={selectedRows.has(scrapeResult.id as string)}
-                onChange={(e) =>
-                  handleCheckboxChange(scrapeResult.id as string)
-                }
-                onClick={(e) => e.stopPropagation()} // Prevent triggering row click
-                className="cursor-pointer w-4 h-4"
-              />
+        {results.map((scrapeResult) => {
+          const status =
+            rowStatuses[scrapeResult.id as string]?.status || "idle";
+          const color =
+            rowStatuses[scrapeResult.id as string]?.color || "text-gray-500";
+          console.log(status);
+          return (
+            <div
+              key={scrapeResult.id}
+              data-id={scrapeResult.id}
+              onClick={() => handleRowClick(scrapeResult)}
+              className={`grid gap-2 p-3 border-b border-gray-700 hover:bg-[rgba(255,255,255,0.1)] cursor-pointer `}
+              style={{
+                gridTemplateColumns: "5% 20% 20% 25% 20% 5%",
+              }}
+            >
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.has(scrapeResult.id as string)}
+                  onChange={(e) =>
+                    handleCheckboxChange(scrapeResult.id as string)
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className="cursor-pointer w-4 h-4"
+                />
+              </div>
+              <div>
+                {selectedRows.has(scrapeResult.id as string) ? "Yes" : "No"}
+              </div>
+              <div className={`${color}`}>{status}</div>
+              <div>{formatDate(scrapeResult.Metadata?.addedAt as string)}</div>
+              <div className="truncate">
+                {extractHostname(scrapeResult.url as string) || "Unknown"}
+              </div>
+              <div>
+                {scrapeResult.Metadata?.scheduleFrequency === "" ? (
+                  ""
+                ) : (
+                  <RefreshCw />
+                )}
+              </div>
             </div>
-
-            {/* Columns */}
-            <div>
-              {selectedRows.has(scrapeResult.id as string) ? "Yes" : "No"}
-            </div>
-            <div>Status</div>
-            <div>{formatDate(scrapeResult.Metadata?.addedAt as string)}</div>
-            <div className="truncate">
-              {extractHostname(scrapeResult.url as string) || "Unknown"}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

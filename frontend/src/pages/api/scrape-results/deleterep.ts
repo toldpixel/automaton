@@ -5,7 +5,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ScrapeResult[] | ScrapeResult | { error: string }>
 ) {
-  const resultUrl = "http://localhost:5000/api/results/delete";
+  //delete repeatable
+  const resultUrl = "http://localhost:5000/api/websites/delete";
   try {
     const { list } = req.body;
 

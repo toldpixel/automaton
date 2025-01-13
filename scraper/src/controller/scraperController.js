@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { saveResultToDB } from "../api-clients/storage.js";
+import { mock } from "../mock-data/mock.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ export class ScrapeController {
     this.pages = [];
     this.scraperInitialized = false; //prevent multiple initialization
     this.isInitialized = false;
+    this.useChatGPT = false; // Flag gets controlled by AI switch in frontend per socket
   }
 
   //initialize puppeteer, bullmq worker and the scraper
@@ -47,6 +49,16 @@ export class ScrapeController {
       console.error(`Job ${job.id} failed with error:`, err.message);
     });
   }*/
+
+  //Socket handler sets the ChatGPT active or not
+  async handleSocketEvents(socket) {
+    const setChatGPTActive = (data) => {
+      //! Arrow function needed to bind to the correct context, this loses context
+      console.log(data.mode);
+      this.useChatGPT = data.mode; // `this` correctly refers to the ScrapeController instance
+    };
+    socket.on("ai-mode-activated", (data) => setChatGPTActive(data));
+  }
 
   //tracks the open pages
   async openNewPage() {
@@ -109,12 +121,21 @@ export class ScrapeController {
   //scrapes the url and specified selector
   async scrapeURL(url, selectors) {
     const newPage = await this.openNewPage();
+    let scrapedJsonData = JSON.stringify({});
+    let assistantData = [];
     try {
       console.log(`Navigating to ${url}`);
       await newPage.page.goto(url, { waitUntil: "domcontentloaded" }); // wait till the content is loaded
       this.scraper.setPage(newPage.page);
-      const scrapedJsonData = await this.scraper.extractData(selectors); // pass selectors, and get back json format
-      const assistantData = this.assistantMessage(scrapedJsonData); // pass the scraped data to ChatGPT Assistant for json
+      if (this.useChatGPT) {
+        //! APPLICATION ONLY SCRAPES IF USECHATGPT IS SET TO TRUE
+        console.log("----------- ChatGPT Mode Set ------------");
+        scrapedJsonData = await this.scraper.extractData(selectors); // pass selectors, and get back json format
+        assistantData = this.assistantMessage(scrapedJsonData); // pass the scraped data to ChatGPT Assistant for json
+      } else {
+        console.log("----------- Testing Mode Set ------------");
+        assistantData = mock; // imported from mock-data just samples for testing
+      }
       return assistantData;
     } catch (error) {
       console.error(error);
@@ -131,19 +152,47 @@ export class ScrapeController {
       async (job) => {
         try {
           console.log(`Processing jobID ${job.id} with data:`, job.data);
-          const scrapeResult = await this.startScrape(
-            job.data.url,
-            job.data.selectors
-          );
+          if (this.useChatGPT) {
+            const scrapeResult = await this.startScrape(
+              job.data.url,
+              job.data.selectors
+            );
 
-          const savedResult = saveResultToDB(scrapeResult, job.data);
+            const savedResult = saveResultToDB(scrapeResult, job.data);
 
-          this.io.emit("scrape:completed", {
-            jobId: job.id,
-            result: scrapeResult,
-          });
+            this.io.emit("scrape:completed", {
+              jobId: job.id,
+              result: scrapeResult,
+            });
 
-          return savedResult;
+            return savedResult;
+          } else {
+            // Simulates work for non AI Mode and uses Mock data
+            console.log("---- Simulate work -----");
+            for (let i = 0; i <= 100; i += 20) {
+              console.log(`Job ${job.id} progress: ${i}%`);
+              this.io.emit("worker-progress", {
+                id: job.id,
+                progress: i,
+                status: "Job in progress",
+              });
+              await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate delay
+            }
+
+            const scrapeResult = await this.startScrape(
+              job.data.url,
+              job.data.selectors
+            );
+
+            const savedResult = saveResultToDB(scrapeResult, job.data);
+
+            this.io.emit("scrape:completed", {
+              jobId: job.id,
+              result: scrapeResult,
+            });
+
+            return savedResult;
+          }
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
           throw error;
@@ -167,7 +216,7 @@ export class ScrapeController {
     this.worker.on("completed", (job, returnvalue) => {
       console.log(`Job ${job.id} completed with return value:`, returnvalue);
       this.io.emit("worker-completed", {
-        jobId: job.id,
+        id: job.id,
         progress: returnvalue,
         status: "Job in progress",
       });
@@ -176,8 +225,8 @@ export class ScrapeController {
     this.worker.on("progress", (job, progress) => {
       console.log(`Job ${job.id} progress:`, progress);
       this.io.emit("worker-progress", {
-        jobId: job.id,
-        progress,
+        id: job.id,
+        progress: progress,
         status: "Job in progress",
       });
     });
@@ -185,7 +234,7 @@ export class ScrapeController {
     this.worker.on("failed", (job, err) => {
       console.error(`Job ${job.id} failed with error:`, err.message);
       this.io.emit("worker-failed", {
-        jobId: job.id,
+        id: job.id,
         error: err.message,
         status: "Job failed",
       });
@@ -264,7 +313,7 @@ export class ScrapeController {
     }
   }
 
-  // ChatGPT Messaging
+  // Use ChatGPT Messaging to create a json with all necessary information
   async assistantMessage(inputText) {
     console.log(this.assistantThread);
     console.log("Text is passed to ChatGPT Assistant");

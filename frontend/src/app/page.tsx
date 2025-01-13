@@ -7,7 +7,6 @@ import { ScrollableDataTable } from "@/components/datatable";
 import React, { useEffect, useState } from "react";
 import { ScrapeProvider } from "@/context/chartBoxPlotContext";
 import Add from "@/components/menubar/add";
-import { WebsocketEventEnum } from "../types/events";
 import { Download, FileText } from "lucide-react";
 import { socket } from "../socket";
 import {
@@ -17,14 +16,25 @@ import {
 } from "@/components/ui/popover";
 import { Scrape } from "@/types/scraperesult";
 export default function Home() {
-  const { results, overviewResults, setResults } = useScrapeResult();
+  const { results, overviewResults, setResults, fetchResults } =
+    useScrapeResult();
   const [activeView, setActiveView] = useState<string>("Overview"); // Default state
   const [workerStatus, setWorkerStatus] = useState<string>("idle"); // For Lifecycle
   const [isConnected, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState("N/A");
+  const [isTransport, setTransport] = useState("N/A");
   const [downloadFormat, setDownloadFormat] = useState<"csv" | "excel">("csv");
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [isSelected, setIsSelected] = useState<string>(""); // For Overview Title
+  const [aimode, setAiMode] = useState<Boolean>(false);
+
+  type RowStatus = {
+    [key: string]: {
+      status: string;
+      color: string;
+    };
+  };
+
+  const [rowStatuses, setRowStatuses] = useState<RowStatus>({});
   // Handles the status updates "Scraper ready"
   useEffect(() => {
     function onConnect() {
@@ -37,27 +47,52 @@ export default function Home() {
       });
     }
 
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
     socket.on("worker-ready", (data) => {
       console.log("Received worker-ready:", data.status);
       setWorkerStatus("ready");
     });
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
 
     socket.on("worker-progress", (data) => {
       console.log("progress data:", data.progress);
-      setTimeout(() => setWorkerStatus("progress"), 2000);
+      setTimeout(() => setWorkerStatus("progress"), 3000);
+      console.log(
+        `Worker progress for ${data.id.split(":")[1]}:`,
+        data.progress
+      );
+      const id = data.id.split(":")[1];
+      setRowStatuses((prev) => ({
+        ...prev,
+        [id]: { status: "progress", color: "text-yellow-500" },
+      }));
     });
+
     socket.on("worker-completed", (data) => {
-      console.log(data);
       setWorkerStatus("completed");
-      setTimeout(() => setWorkerStatus("ready"), 2000);
+      setTimeout(() => setWorkerStatus("ready"), 3000);
+      console.log(
+        `Worker completed for ${data.id.split(":")[1]}:`,
+        data.result
+      );
+      const id = data.id.split(":")[1];
+      setRowStatuses((prev) => ({
+        ...prev,
+        [id]: { status: "completed", color: "text-purple-500" },
+      }));
+      fetchResults();
     });
-    socket.on("worker-failed", () => setWorkerStatus("failed"));
+    socket.on("worker-failed", (data) => {
+      setWorkerStatus("failed");
+      console.log(`Worker failed for ${data.id}:`, data.error);
+      const id = data.id.split(":")[1];
+      setRowStatuses((prev) => ({
+        ...prev,
+        [id]: { status: "failed", color: "text-red-500" },
+      }));
+    });
     socket.on("worker-error", () => setWorkerStatus("error"));
-    socket.on("some event", (payload) => {
-      console.log("Received 'some event':", payload);
-    });
 
     function onDisconnect() {
       setIsConnected(false);
@@ -74,6 +109,14 @@ export default function Home() {
       socket.off("worker-error");
     };
   }, []);
+
+  useEffect(() => {
+    if (aimode) {
+      socket.emit("ai-mode-activated", { mode: true });
+    } else {
+      socket.emit("ai-mode-activated", { mode: false });
+    }
+  }, [aimode]);
 
   // Excel or CSV Download
   const handleDownload = async () => {
@@ -204,11 +247,12 @@ export default function Home() {
                     activeView={activeView}
                     onMenuClick={(view) => setActiveView(view)}
                     statusColor={getStatusColor()}
+                    setAiMode={setAiMode}
                   />
-
                   {activeView === "Add" && <Add />}
                   {activeView === "Overview" && (
                     <ScrollableDataTable
+                      rowStatuses={rowStatuses}
                       results={results}
                       setResults={setResults}
                       selectedRows={selectedRows}

@@ -19,6 +19,7 @@ export interface Metadata {
 
 // Interface for finishedJobSchema
 export interface ScrapeResult {
+  _id?: string;
   id?: string;
   url?: string;
   selectors?: string; // Mixed type allows an arbitrary object

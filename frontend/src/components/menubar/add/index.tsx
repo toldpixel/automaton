@@ -1,9 +1,11 @@
 import { ScrapeResult } from "@/types/scraperesult";
 import React, { useState } from "react";
+import { useScrapeResult } from "@/context/ScrapeResultContext"; // Refresh or rerender page after added data
 
 type Props = {};
 
 const Add = (props: Props) => {
+  const { fetchResults } = useScrapeResult();
   const [url, setUrl] = useState("");
   const [selectors, setSelectors] = useState("");
   const [priority, setPriority] = useState<"high" | "medium" | "low" | "">("");
@@ -48,6 +50,10 @@ const Add = (props: Props) => {
       const result = await response.json();
       console.log(result);
       alert("Scraping website!");
+
+      // Refresh data
+      await fetchResults();
+
       setUrl(""); //! Reset the form :)
       setSelectors("");
       setPriority("");

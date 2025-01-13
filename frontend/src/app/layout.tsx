@@ -1,8 +1,8 @@
+"use client";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import { ScrapeResultProvider } from "@/context/ScrapeResultContext";
 import "./globals.css";
-import { ThemeProvider } from "@/providers/theme-provider";
 
 const roboto = Roboto({
   weight: "400",
