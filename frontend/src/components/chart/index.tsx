@@ -68,7 +68,7 @@ export function ChartComponent({ overviewResults }: Props) {
 
   return (
     <div>
-      <ChartContainer config={chartConfig} className="min-h-[500px] w-full">
+      <ChartContainer config={chartConfig} className="min-h-[600px] w-full">
         <BarChart accessibilityLayer data={chartData}>
           <CartesianGrid vertical={false} />
 
@@ -80,10 +80,10 @@ export function ChartComponent({ overviewResults }: Props) {
               interval={0} // Ensures every label is displayed
               height={100}
               tick={{
-                angle: -45, // Rotate the labels 45 degrees counter-clockwise
+                angle: -25, // Rotate the labels 45 degrees counter-clockwise
                 textAnchor: "end", // Align the text to the end of the tick
                 fill: "#fff", // Set label color to white for better visibility
-                fontSize: 12, // Adjust font size
+                fontSize: 13, // Adjust font size
                 dy: 10,
               }}
             />
@@ -103,11 +103,13 @@ export function ChartComponent({ overviewResults }: Props) {
               value: "Price in $", // Text for the legend
               angle: -90, // Rotate the label to match the Y-axis orientation
               position: "insideLeft", // Position the label inside the chart
-              style: { textAnchor: "middle", fill: "#fff", fontSize: 14 }, // Style the label
+              style: {
+                textAnchor: "middle",
+                fill: "#fff",
+                fontSize: 16,
+              }, // Style the label
             }}
           />
-
-          <ChartLegend content={<ChartLegendContent />} />
 
           <Bar
             dataKey="price"
