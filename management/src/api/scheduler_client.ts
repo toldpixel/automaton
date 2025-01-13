@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import axios from "axios";
 import dotenv from "dotenv";
+import { response } from "express";
 dotenv.config();
 
 const SCHEDULER_API_URL = process.env.SCHEDULER_API_URL;
@@ -35,6 +36,28 @@ export async function postJobToScheduler(
     return response.data;
   } catch (error) {
     console.error(error);
+    return null;
+  }
+}
+
+export async function deleteJobsFromScheduler(listOfIds: string[]): Promise<{
+  success: boolean;
+  message: string;
+} | null> {
+  try {
+    for (const id of listOfIds) {
+      console.log(`Deleting job with ID: ${id}`);
+      const response = await axios.delete(
+        `${SCHEDULER_API_URL}/api/jobs/repeatable/${id}`
+      );
+      console.log(`Deleted job with ID: ${id}`, response.data);
+    }
+    return {
+      success: true,
+      message: `Repeatable job with key ${listOfIds} removed successfully.`,
+    };
+  } catch (error) {
+    console.error(`Error deleting jobs from scheduler: ${error}`);
     return null;
   }
 }

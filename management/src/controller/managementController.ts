@@ -1,7 +1,10 @@
 import { Response, Request } from "express";
 import { ManagementModel } from "../models/managementModel";
 import { Prisma, PrismaClient, Website } from "@prisma/client";
-import { postJobToScheduler } from "../api/scheduler_client";
+import {
+  deleteJobsFromScheduler,
+  postJobToScheduler,
+} from "../api/scheduler_client";
 
 const store = new ManagementModel();
 const prisma = new PrismaClient();
@@ -120,6 +123,28 @@ export const deleteWebsite = async (
     const deletedWebsite = await store.delete(id);
     if (!deletedWebsite) {
       res.status(404).json({ error: "Website not found" });
+    }
+    res.status(200).json({ message: "Website deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete website" });
+  }
+};
+
+export const deleteSelected = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { list } = req.body;
+    if (!Array.isArray(list) || list.length === 0) {
+      res.status(400).json({ error: "No valid IDs provided" });
+      return;
+    }
+    const deletedWebsite = await deleteJobsFromScheduler(list);
+    if (!deletedWebsite) {
+      res.status(404).json({ error: "Website not found" });
+      return;
     }
     res.status(200).json({ message: "Website deleted successfully" });
   } catch (error) {
