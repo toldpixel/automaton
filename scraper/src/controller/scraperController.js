@@ -35,6 +35,9 @@ export class ScrapeController {
     this.isInitialized = true;
     this.io = io;
     await this.retrieveAssistant(); // Get ChatGPT Assistant
+    /*await this.retrieveAssistantThread();
+    if (!this.assistantThread) {
+    }*/
     await this.createAssistantThread(); // Create ChatGPT Assistant Thread for sending messages
 
     await this.startWorker();
@@ -152,13 +155,18 @@ export class ScrapeController {
       "myqueue",
       async (job) => {
         try {
-          const isCancelled = await checkIfJobIsCancelled(job.id);
-
-          // If the job was already cancelled then dont do startScrape
-          if (isCancelled) {
-            console.log(`Job ${job.id} was cancelled.`);
-            return;
+          const isNonRepeatableJob = job.data.Metadata.scheduleFrequency === ""; // scheduleFrequency is set if its a repeatable job
+          // Only check if its a repeatable job!
+          if (!isNonRepeatableJob) {
+            // If the job was already cancelled then dont do startScrape for repeatable job routines
+            const isCancelled = await checkIfJobIsCancelled(job.id);
+            console.log(isNonRepeatableJob);
+            if (isCancelled) {
+              console.log(`Job ${job.id} was cancelled.`);
+              return;
+            }
           }
+
           console.log(`Processing jobID ${job.id} with data:`, job.data);
           // ChatGPT Mode
           if (this.useChatGPT === true) {
@@ -169,10 +177,12 @@ export class ScrapeController {
 
             const savedResult = await saveResultToDB(scrapeResult, job.data);
 
-            this.io.emit("scrape:completed", {
+            /*this.io.emit("scrape:completed", {
               jobId: job.id,
               result: scrapeResult,
-            });
+            });*/
+
+            // close ChatGPT Assistant Thread
 
             return savedResult;
           } else {
@@ -193,13 +203,16 @@ export class ScrapeController {
               job.data.selectors
             );
 
-            if (!checkIfJobIsCancelled(job.id)) {
-              //! If job is canceled from the repeatable queue dont save anything to the database and return
-              //! in case of job is processing but removed from the queue
-              console.log(
-                `Job ${job.id} in queue. Job wont be saved to the database`
-              );
-              return;
+            // Only do this for repeatable jobs
+            if (!isNonRepeatableJob) {
+              if (!checkIfJobIsCancelled(job.id)) {
+                //! If job is canceled from the repeatable queue dont save anything to the database and return
+                //! in case of job is processing but removed from the queue
+                console.log(
+                  `Job ${job.id} in queue. Job wont be saved to the database`
+                );
+                return;
+              }
             }
 
             const savedResult = await saveResultToDB(scrapeResult, job.data);
@@ -320,7 +333,7 @@ export class ScrapeController {
     }
   }
 
-  async deleteAssitantThread() {
+  async deleteAssistantThread() {
     try {
       if (this.assistantThread) {
         // Delete the thread using the provided thread ID
@@ -439,7 +452,6 @@ async function polling(attempt, maxRetries, pollingInterval, runStatus, run) {
   const result = [];
   while (attempt < maxRetries) {
     console.log(`Polling attempt ${attempt + 1}: Status - ${runStatus}`);
-
     if (runStatus === "completed") {
       console.log("Run completed. Retrieving messages...");
 
