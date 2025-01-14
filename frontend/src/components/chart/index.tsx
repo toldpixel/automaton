@@ -100,9 +100,10 @@ export function ChartComponent({ overviewResults }: Props) {
             tickFormatter={(value) => `$ ${value}`}
             ticks={ticks}
             label={{
-              value: "Price in $", // Text for the legend
+              value: `Price in $ per ${scrapes.length > 0 ? "month" : "hour"}`, // Text for the legend
               angle: -90, // Rotate the label to match the Y-axis orientation
               position: "insideLeft", // Position the label inside the chart
+              dx: -4,
               style: {
                 textAnchor: "middle",
                 fill: "#fff",
