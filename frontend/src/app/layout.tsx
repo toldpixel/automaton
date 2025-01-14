@@ -1,8 +1,11 @@
-"use client";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import { ScrapeResultProvider } from "@/context/ScrapeResultContext";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Automaton",
+};
 
 const roboto = Roboto({
   weight: "400",

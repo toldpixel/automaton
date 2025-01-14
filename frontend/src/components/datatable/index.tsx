@@ -138,7 +138,7 @@ export const ScrollableDataTable = ({
   };
 
   return (
-    <div className="border border-[#27272A] min-h-[500px] overflow-y-auto">
+    <div className="border border-[#27272A] min-h-[500px] overflow-y-auto overflow-hidden">
       <div className="p-2">
         <Button
           variant="destructive"

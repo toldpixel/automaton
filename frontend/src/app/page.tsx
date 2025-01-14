@@ -185,9 +185,10 @@ export default function Home() {
   return (
     <>
       <div className="container mx-auto">
-        <div className="h-screen flex-col space-y-5 items-center justify-center text-white">
+        <div className="h-screen flex-col space-y-2 items-center justify-center text-white">
           <div className="flex justify-between items-center">
-            <div className="text-[48px] font-bold ">Automaton</div>
+            <div className="text-[48px]  font-bold ">Automaton</div>
+
             <div className="">
               <Popover>
                 <PopoverTrigger>
@@ -222,6 +223,9 @@ export default function Home() {
               </Popover>
             </div>
           </div>
+          <div className=" text-[#909098]">
+            Automated Web Scraping, Right on Schedule.
+          </div>
           {/* <div className="inline-flex space-x-2 bg-[#27272A] p-1 rounded-lg"></div> */}
           <ScrapeProvider>
             <div className="flex rounded gap-5 ">
@@ -237,6 +241,7 @@ export default function Home() {
                 </div>
                 <div>
                   {/* Sets ScrapeProviderContext in Scrollable DataTable to change the Chart Data */}
+
                   <ChartComponent overviewResults={overviewResults} />
                 </div>
               </div>

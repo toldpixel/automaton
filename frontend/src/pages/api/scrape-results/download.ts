@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { ScrapeResult } from "@/types/scraperesult";
 
+// Prepare for downloading xlsx or csv
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ScrapeResult[] | ScrapeResult | { error: string }>
 ) {
   const resultDownloadURL = "http://localhost:5000/api/results/download";
 
-  console.log("dfafdf", resultDownloadURL);
   try {
     const { list, format } = req.body;
 

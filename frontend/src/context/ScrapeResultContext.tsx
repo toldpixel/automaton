@@ -53,7 +53,11 @@ export const ScrapeResultProvider: React.FC<{
 
   // Prepare overview data for the chart
   function overviewPrepare(scrapeResult: ScrapeResult[]): Scrape[] {
-    return scrapeResult.flatMap((resultData) => resultData.result || []);
+    const overviewResults = scrapeResult.flatMap(
+      (resultData) => resultData.result || []
+    );
+
+    return overviewResults;
   }
 
   // Fetch results on mount

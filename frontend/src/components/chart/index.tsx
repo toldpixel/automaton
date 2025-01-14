@@ -12,7 +12,6 @@ type Props = {
 //! overviewResults comes from props but individual scrapeResults from Context store dont do this again
 export function ChartComponent({ overviewResults }: Props) {
   const { scrapes } = useScrapeContext(); // Scrape results in global store ChartBoxPlotContext available
-
   // Function to extract numeric value from US price format
   const extractPrice = (priceString?: string): number => {
     if (!priceString) return 0;
@@ -33,13 +32,14 @@ export function ChartComponent({ overviewResults }: Props) {
   then show monthly otherwise hourly 
   else if its the nothing picked yet then show overview of all data
   */
+  console.log(overviewResults);
   const chartData = (scrapes.length > 0 ? scrapes : overviewResults).map(
     (scrape) => ({
       gpu: scrape.gpu || "Unknown",
       price:
         scrapes.length > 0
           ? extractPrice(scrape.price_monthly || scrape.price_hourly)
-          : extractPrice(scrape.price_hourly),
+          : extractPrice(scrape.price_hourly || scrape.price_monthly),
     })
   );
 
@@ -49,7 +49,7 @@ export function ChartComponent({ overviewResults }: Props) {
   const maxPrice = Math.max(...prices);
 
   const range = maxPrice - minPrice;
-  const tickStep = range <= 100 ? 1 : 1500; // Adjust spacing dynamically
+  const tickStep = range <= 100 ? 1 : 100; // Adjust spacing dynamically
   const ticks = [];
   for (
     let i = Math.floor(minPrice / tickStep) * tickStep;
