@@ -18,6 +18,7 @@
 ## About the Project
 
 Automaton is a scalable and fully automated system that can scrape multiple websites either once or repeatedly according to specified schedules.
+![image](https://github.com/user-attachments/assets/30b03c25-1b86-4f4a-b2b3-8a60ca6e55d9)
 
 - **Technologies Used**  
   Below is a list of programming languages, frameworks, and libraries used.
