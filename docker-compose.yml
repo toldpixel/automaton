@@ -1,0 +1,138 @@
+version: "3.8"
+
+services:
+  scraper:
+    build:
+      context: ./scraper/
+      dockerfile: Dockerfile
+    container_name: scraper_service
+    env_file:
+      - ./scraper/.env.scraper
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mongodb
+    volumes:
+      - .:/app
+    command: >
+      bash -c "
+      npm run start
+      "
+    networks:
+      - mynetwork
+
+  scheduler:
+    build:
+      context: ./scheduler/
+      dockerfile: Dockerfile
+    container_name: scheduler_service
+    env_file:
+      - ./scheduler/.env.scheduler
+    ports:
+      - "4444:4444"
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: >
+      bash -c "
+      npm run start
+      "
+    networks:
+      - mynetwork
+
+  management:
+    build:
+      context: ./management/
+      dockerfile: Dockerfile
+    container_name: management_service
+    env_file:
+      - ./management/.env.management
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - mongodb
+    command: >
+      bash -c "
+      npm run migrate && 
+      npx prisma generate &&
+      npm run seed && 
+      npm run start
+      "
+    networks:
+      - mynetwork
+
+  mongodb:
+    container_name: mongo_container
+    image: mongodb/mongodb-community-server:latest
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongodb-data:/data/db/
+      - mongodb-log:/var/log/mongodb/
+    networks:
+      - mynetwork
+
+  postgres:
+    container_name: postgres_container
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - data:/var/lib/postgresql/data
+      - logs:/var/log/postgresql
+      - ./postgres-docker/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgres-docker/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "hba_file=/etc/postgresql/pg_hba.conf",
+      ]
+    networks:
+      - mynetwork
+
+  redis:
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - mynetwork
+
+volumes:
+  data:
+    driver: local
+  logs:
+    driver: local
+  mongodb-data:
+    driver: local
+    name: mongo-data
+  mongodb-log:
+    driver: local
+    name: mongo-log
+
+networks:
+  mynetwork:
+    driver: bridge

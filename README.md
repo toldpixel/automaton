@@ -18,6 +18,7 @@
 ## About the Project
 
 Automaton is a scalable and fully automated system that can scrape multiple websites either once or repeatedly according to specified schedules.
+
 ![image](https://github.com/user-attachments/assets/30b03c25-1b86-4f4a-b2b3-8a60ca6e55d9)
 
 - **Technologies Used**  
@@ -59,15 +60,23 @@ The Backend runs in multiple Docker containers. You need Docker to setup the env
 
 - Docker for creating the containers [Docker](https://www.docker.com/)
 - Docker Compose running the multiple containers [Docker Compose](https://docs.docker.com/compose/)
-- ChatGPT Assistant for AI mode (you'll need access to Openai API and create an Assistant with
-  custom Prompts), otherwise the application will only run in Demo Mode with the AI switch turned off (by default).
+- ChatGPT Assistant for AI mode (you'll need access to Openai API and create an Assistant with custom Prompts), otherwise the application will only run in Demo Mode with the AI switch turned off (by default).
 
-The Backend application containers expose the ports http://localhost:4000 (Scraper), http://localhost:4444 (Scheduler), http://localhost:5000 (Management), http://localhost:27017 (MongoDB), http://localhost:5432 (PostgrSQL), http://localhost:6379 (Redis)
+The Backend application containers expose the ports:
 
-You need to add 2 .env files for each service. Docker compose uses the .env.\*\*\* environment variables file to read the variables.
+- http://localhost:4000 (Scraper)
+- http://localhost:4444 (Scheduler)
+- http://localhost:5000 (Management)
+- http://localhost:27017 (MongoDB)
+- http://localhost:5432 (PostgreSQL)
+- http://localhost:6379 (Redis)
 
-- Scraper:
-  **Create a .env File**
+You need to add two `.env` files for each service. Docker Compose uses the `.env.***` environment variables file to read the variables.
+
+- **Scraper:**
+  **Create a `.env` File**
+
+  ```env
   PORT=""
   REDIS_HOST="127.0.0.1"
   OPENAI_API_KEY=""
@@ -79,8 +88,11 @@ You need to add 2 .env files for each service. Docker compose uses the .env.\*\*
   MONGODB_PASS=""
   MANAGEMENT_HOST="127.0.0.1"
   SCHEDULER_API_URL="http://localhost:4444"
+  ```
 
-  **Create a .env.scraper File**
+  **Create a `.env.scraper` File**
+
+  ```env
   PORT=4000
   REDIS_HOST="redis"
   OPENAI_ASSISTANT_ID=""
@@ -90,18 +102,27 @@ You need to add 2 .env files for each service. Docker compose uses the .env.\*\*
   MONGODB_USER=""
   MONGODB_PASS=""
   MANAGEMENT_HOST="management"
+  ```
 
-- Scheduler:
-  **Create a .env File**
+- **Scheduler:**
+  **Create a `.env` File**
+
+  ```env
   PORT=4444
   REDIS_HOST="127.0.0.1"
+  ```
 
-  **Create a .env.scheduler File**
+  **Create a `.env.scheduler` File**
+
+  ```env
   PORT=4444
   REDIS_HOST="redis"
+  ```
 
-- Management:
-  **Create a .env File**
+- **Management:**
+  **Create a `.env` File**
+
+  ```env
   DATABASE_URL=""
   PORT=5000
   SCHEDULER_API_URL="http://localhost:4444"
@@ -109,8 +130,11 @@ You need to add 2 .env files for each service. Docker compose uses the .env.\*\*
   MONGODB_DB=""
   MONGODB_USER=""
   MONGODB_PASS=""
+  ```
 
-  **Create a .env.managment File**
+  **Create a `.env.management` File**
+
+  ```env
   DATABASE_URL=""
   PORT=5000
   SCHEDULER_API_URL="http://scheduler:4444"
@@ -118,17 +142,19 @@ You need to add 2 .env files for each service. Docker compose uses the .env.\*\*
   MONGODB_DB="cloudgpu"
   MONGODB_USER=""
   MONGODB_PASS=""
+  ```
 
-The Frontend
+The **Frontend**
 
-- The Frontend application doesnt run in a container. You have to
-  install the dependencies manually. See under Steps
+- The Frontend application doesn't run in a container. You have to install the dependencies manually. See under **Steps**.
 
-The Frontend application exposes the port http://localhost:3000 (frontend)
+The Frontend application exposes the port:
+
+- http://localhost:3000 (frontend)
 
 ### Steps
 
-Provide step-by-step instructions to install your project:
+Step-by-step instructions to install the project:
 
 ```bash
 # Clone the repository
@@ -137,13 +163,13 @@ git clone https://github.com/toldpixel/automaton.git
 # Navigate to the project directory
 cd automaton
 
-# docker-compose.yml file defines the services, networks, and volumes required for your application.
+# Build the backend services
 docker compose build
 
-# Start the backend services with
+# Start the backend services
 docker compose up
 
-# switch to the frontend folder
+# Switch to the frontend folder
 cd frontend
 
 # Install the frontend dependencies
@@ -153,5 +179,4 @@ npm install  # or your package manager
 npm run dev
 ```
 
-After a view seconds you should see the "Scraper ready" signal on green. That means that a connection between your frontend and the scraper service got established your scraper is connected to
-redis and the scheduler aswell and depend on those services running.
+After a few seconds, you should see the "Scraper ready" signal in green. This means that a connection between your frontend and the scraper service has been established, and your scraper is connected to Redis, the scheduler, and other dependent services.
