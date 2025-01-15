@@ -49,7 +49,7 @@ export function ChartComponent({ overviewResults }: Props) {
   const maxPrice = Math.max(...prices);
 
   const range = maxPrice - minPrice;
-  const tickStep = range <= 100 ? 1 : 100; // Adjust spacing dynamically
+  const tickStep = range <= 100 ? 1 : 1000; // Adjust spacing dynamically
   const ticks = [];
   for (
     let i = Math.floor(minPrice / tickStep) * tickStep;

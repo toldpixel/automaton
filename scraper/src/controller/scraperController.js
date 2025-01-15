@@ -167,6 +167,8 @@ export class ScrapeController {
             }
           }
 
+          const assistantThreadCreated = await this.createAssistantThread();
+          console.log("New AssistantThread created:", assistantThreadCreated);
           console.log(`Processing jobID ${job.id} with data:`, job.data);
           // ChatGPT Mode
           if (this.useChatGPT === true) {
@@ -183,7 +185,10 @@ export class ScrapeController {
             });*/
 
             // close ChatGPT Assistant Thread
-
+            const closedAssistantResponse = await this.deleteAssistantThread(
+              this.assistantThread
+            );
+            console.log("Assistant thread was closed", closedAssistantResponse);
             return savedResult;
           } else {
             // Simulates work for non AI Mode and uses Mock data
@@ -337,9 +342,7 @@ export class ScrapeController {
     try {
       if (this.assistantThread) {
         // Delete the thread using the provided thread ID
-        const response = await this.openai.beta.threads.delete(
-          this.assistantThread.id
-        );
+        const response = await openai.beta.threads.del(this.assistantThread.id);
         console.log("Assistant thread deleted:", response);
         return true;
       }
