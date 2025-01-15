@@ -71,7 +71,24 @@ The Backend application containers expose the ports:
 - http://localhost:5432 (PostgreSQL)
 - http://localhost:6379 (Redis)
 
-You need to add two `.env` files for each service. Docker Compose uses the `.env.***` environment variables file to read the variables.
+You need to add a global .env in **automaton/** folder and additionally two `.env` files in each **src/** folder for each service (scraper, management and scheduler). Docker Compose uses the `.env.***` environment variables file to read the variables.
+
+- **Automaton repository .env**
+  **Create a `.env` File**
+  these are used for setting up the databases postgres and mongodb
+
+  ```
+  MONGO_DB="mongodb"
+  MONGODB_DB=""
+  MONGODB_USER=""
+  MONGODB_PASS=""
+  MONGO_INITDB_ROOT_USERNAME=""
+  MONGO_INITDB_ROOT_PASSWORD=""
+  POSTGRES_PASSWORD=""
+  POSTGRES_USER=""
+  POSTGRES_DB=""
+  POSTGRES_HOST=""
+  ```
 
 - **Scraper:**
   **Create a `.env` File**
